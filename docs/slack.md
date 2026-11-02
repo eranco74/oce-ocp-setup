@@ -11,6 +11,12 @@ and runtime image references, database and Agent volumes, credentials, routing,
 and admin-launcher settings. The control-plane rollout interrupts OCC requests;
 deploying an affected Agent can interrupt its connections and turns.
 
+Apply `runtime.channels` before the next OCE image upgrade, not during it:
+releases from the 2026-11-02 carry images refuse to deploy an Agent whose
+`channels.slack` is enabled while the Installation has no channel runtime, and
+an Installation correction made mid-upgrade blocks the upgrade helper's resume.
+See [upgrades](upgrades.md#2-prepare-the-upgrade).
+
 ## Prepare the existing installation
 
 Run from this setup repository with `OCE_CHECKOUT` at the source revision of the
