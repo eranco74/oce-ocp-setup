@@ -344,7 +344,7 @@ After installing the OpenShell gateway, render its pinned workspace chart. Its f
 **Prepare Codex workspace configuration only.**
 
 ```bash
-export OPEN_SHELL_CHART="$OCC_INPUT_DIRECTORY/openshell-charts/openshell-workspace-0.1.5.tgz"
+export OPEN_SHELL_CHART="$OCC_INPUT_DIRECTORY/openshell-charts/openshell-workspace-0.1.6.tgz"
 
 helm template openshell-workspace "$OPEN_SHELL_CHART" \
   --namespace openclaw-workspace-template \

@@ -1,4 +1,4 @@
-# OpenShift test-cluster profile for the pinned OpenShell v0.1.5 chart.
+# OpenShift test-cluster profile for the pinned OpenShell v0.1.6 chart.
 # Only an isolated OCE controller may reach this unauthenticated gateway.
 # Development-only plaintext transport requires the exact NetworkPolicy boundary.
 fullnameOverride: openshell-gateway
@@ -14,6 +14,8 @@ server:
       workspaceMode: operator
       operatorNamespaceLabel: openshell.ai/openclaw-workspace=true
 # OpenShell 0.1.5 rejects Sandbox template labels unless the operator allows them.
+# Images: Red Hat Konflux builds of the v0.1.6-rhaiv.3 midstream release
+# (opendatahub-io/openshell), published on quay.io/opendatahub.
 gatewayConfig:
   openshell.drivers.kubernetes:
     allowed_pod_labels:
@@ -36,16 +38,16 @@ service:
   type: ClusterIP
 gateway:
   image:
-    registry: ghcr.io
-    repository: nvidia/openshell/gateway
-    digest: sha256:ca0bc15a045017ee20bfab682f1a561eca6e6c6ed7d021d20641da24aaa6dfb6
+    registry: quay.io
+    repository: opendatahub/odh-openshell-gateway
+    digest: sha256:818aa0661fdf6a1e23a0484042aa5052a4ff3992eba196bc7a15837df1d1eb50
 sandboxRuntime:
   image:
-    registry: ghcr.io
-    repository: nvidia/openshell/sandbox
-    digest: sha256:e9adf9ecde328122414ad2ee8c6fc5d5b389e4cf168daf4357c46f5a77d55851
+    registry: quay.io
+    repository: opendatahub/odh-openshell-sandbox
+    digest: sha256:a26749a10cb0c68e56784486bc287a7a6ee5af0e65a6b3a2dc1c94d67cbcf144
 supervisor:
   image:
-    registry: ghcr.io
-    repository: nvidia/openshell/supervisor
-    digest: sha256:fabcd01f656e9d23df4386f82e80b4f48b90f3452d7d5c58889007643a069161
+    registry: quay.io
+    repository: opendatahub/odh-openshell-supervisor
+    digest: sha256:7d9f48627abef8a7d9518a46b7e74875fa7187ca503bcd2e15533cb7d4fc745a

@@ -1,6 +1,6 @@
 # Create more dedicated OpenShell Agents on OpenShift
 
-Use this recipe after OCC, OpenShell v0.1.5, private Envoy routing, and the
+Use this recipe after OCC, OpenShell v0.1.6, private Envoy routing, and the
 Console Route are installed. Each run creates one OCC Namespace and one Agent.
 Use dedicated Codex through OpenShell and the **runtime image already configured
 in the Installation**. There are no image builds here. For native OpenClaw instead of Codex, complete the
