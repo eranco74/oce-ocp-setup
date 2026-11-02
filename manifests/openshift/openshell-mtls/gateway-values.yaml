@@ -30,5 +30,8 @@ certManager:
   serverDnsNames:
     - openshell-gateway.openshell-system.svc
     - openshell-gateway.openshell-system.svc.cluster.local
+    # OCE's routed Sandbox WebSocket URLs use this domain even with fullnameOverride.
+    - openshell.localhost
+    - "*.openshell.localhost"
   serverIpAddresses:
     - 127.0.0.1

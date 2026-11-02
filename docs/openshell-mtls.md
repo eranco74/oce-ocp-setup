@@ -30,6 +30,9 @@ alongside OIDC. It disables anonymous management and leaves the broader mTLS
 `operator` role disabled. The chart's normal client remains separate from the
 dedicated `oce-openshell-admin` Certificate. Never mount OCE's private key in a
 dashboard or sandbox. Dashboard trust contains only the public CA.
+The OCE Certificate carries `OU=openshell-user` and `OU=openshell-admin`:
+OpenShell maps certificate OUs to roles, and a trusted CN alone grants neither.
+These must match the Gateway's user/admin role names. Do not add `OU=operator`.
 
 The post-renderer gives the chart CA a ten-year lifetime, renewal one year before
 expiry, and stable key on renewal. Leaf certificates last 90 days and renew
@@ -44,6 +47,9 @@ avoid adopting the old chart's long-lived generated certificates: cert-manager
 can report an imported certificate Ready without reissuing it under the new CA.
 Keep the old Secrets for rollback and verify issuer, chain and lifetime, not only
 the Certificate Ready condition.
+The serving SANs include `*.openshell.localhost` for OCE's routed Sandbox
+WebSocket URLs. The chart's `*.openshell-gateway.localhost` default does not
+cover those names; management RPC health alone will not detect that mismatch.
 
 ## 1. Capture the baseline and prepare candidates
 
@@ -233,9 +239,16 @@ recreate model sources, or redeploy the fleet as an implicit part of a Helm upda
   authorized mTLS client. Never disable certificate verification for a probe.
 - Verify every previously running Agent's model turn and its required tool
   credentials, including team-claw. Compare PVC UIDs and source/Agent identities
-  to the baseline. Existing supervisors may need a separately coordinated
-  repair/new revision to adopt TLS management trust; test one canary before any
-  fleet action and preserve stopped Agents' state.
+  to the baseline. Existing HTTP supervisors keep a fixed management endpoint;
+  plan new OCE runtime revisions to adopt TLS. OpenShell stop/start may refuse
+  the old Sandbox while it is stuck in `Provisioning`. Use OCE's normal Agent
+  deployment flow, test one canary before the remaining running Agents, and
+  preserve stopped Agents' state. First compare each saved Configuration's ID
+  and generation and the Agent's selections with the active revision: deploying
+  a newer draft also activates its pending edits and requires owner coordination.
+  Keep state migrations with the selected release's helpers. If Doctor reports
+  uncertain command cleanup, preserve its artifacts and investigate that owner;
+  do not force a schema change or repeatedly replay migration.
 - Record image digests, chart/source revisions, certificate fingerprints,
   authentication outcomes and any unverified workflow in private evidence.
 
@@ -268,6 +281,9 @@ using `installation-before.yaml`, then upgrade the Gateway with
 values restore plaintext management; recheck the private NetworkPolicy boundary.
 Use the original recorded replica counts if any release had been scaled down
 before this procedure. Require the same source/Agent/model/dashboard checks.
+Transport rollback does not rewind Agent versions: supervisors created during
+the cutover now retain HTTPS endpoints. Recover affected Agents through OCE again
+after restoring the original transport, with the same draft/generation checks.
 
 Do not delete JWT/encryption Secrets, CA or leaf Secrets, PVCs, or snapshots during
 rollback. Existing SQLite data normally needs no restore for a transport-only
