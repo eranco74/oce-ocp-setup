@@ -6,6 +6,12 @@ worker use a dedicated mTLS client; the dashboard keeps its Keycloak user token.
 Preserve the existing Credential Gateway, sources, Agent identities and PVCs.
 Schedule a maintenance window: OCC, dashboard and Agent connections can pause.
 
+The 2026-11-02 Red Hat runtime restored `git` and `curl`, so existing
+`source-control` and curl policies are active again. This management-only change
+leaves those policies in place. Remove the uninspected GitHub rule only in the
+separate reviewed repository-middleware cutover, when its protected replacement
+is ready.
+
 This procedure is for the existing `openshell-gateway` and `openshell-dashboard`
 releases in `openshell-system`, and `oce` in `openclaw-system`. Review names and
 live state before use. Obtain authorization for the cutover separately from
@@ -74,6 +80,8 @@ export installation_key
 oc -n openclaw-system get secret "$installation_secret" -o json |
   jq -er --arg key "$installation_key" '.data[$key]' | base64 -d \
   > "$CUTOVER_DIRECTORY/installation-before.yaml"
+baseline_checksum=$(shasum -a 256 "$CUTOVER_DIRECTORY/installation-before.yaml" | cut -d ' ' -f 1)
+test "$baseline_checksum" = "$(yq -er '.controlPlane.installationChecksum' "$CUTOVER_DIRECTORY/oce-before.yaml")"
 cp "$CUTOVER_DIRECTORY/installation-before.yaml" "$CUTOVER_DIRECTORY/installation.yaml"
 cp "$CUTOVER_DIRECTORY/oce-before.yaml" "$CUTOVER_DIRECTORY/values.yaml"
 ```
@@ -83,6 +91,16 @@ backup process; do not print them. Record every running Agent/revision and sourc
 ID, including team-claw, before the window. Verify Namespace visibility. Stop if
 there is an upgrade in progress, an unexpected credential owner, an existing TLS
 configuration, or unsupported chart differences. This is not a key-rotation recipe.
+
+If the baseline checksum differs, reconcile the live Helm values and Installation
+before proceeding; do not repair an image-upgrade helper's inputs mid-upgrade.
+Preserve the live `credential_gateway.binaries` list, including Codex's
+`0.164.0` pnpm path and any older path retained through the image transition.
+Do not replace that list with the fresh-install fragment. For Agents with Slack
+enabled, confirm the Installation already has `runtime.channels`; preserve it
+and the managed proxy settings. See the [upgrade prerequisites](upgrades.md#2-prepare-the-upgrade)
+and [Slack preparation](slack.md). Correct missing prerequisites separately before
+this transport cutover.
 
 Render the Gateway candidate with the **live** values first, retaining OIDC,
 Red Hat images, scheduling, encryption/JWT Secret names and storage settings:

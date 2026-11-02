@@ -143,7 +143,7 @@ scripts/resolve-images runtime
 source "$OCC_INPUT_DIRECTORY/images.env"
 ```
 
-The published images are built from the carry main, so a checkout with unmerged carry changes still needs the build above. The published runtime also has a different base image than the in-cluster build, for example `/usr/bin/python3.14` where the in-cluster build ships `/usr/bin/python3.11`, and it drops `/usr/bin/git` and `/usr/bin/curl` entirely. Compare executable paths in Installation allow-lists, such as sandbox policy ceilings, `binaries` and `toolBinaries`, before redeploying Agents: export the candidate image filesystem without running it and check every named path.
+The published images are built from the carry main, so a checkout with unmerged carry changes still needs the build above. The published runtime's base image differs from the in-cluster build, and its executable set has changed between published builds: the 2026-10-30 and earlier builds dropped `/usr/bin/git` and `/usr/bin/curl` entirely, while the 2026-11-02 build restores both and ships `/usr/bin/python3` and `/usr/bin/python3.14` (still no `python3.11`). Compare executable paths in Installation allow-lists, such as sandbox policy ceilings, `binaries` and `toolBinaries`, before redeploying Agents: export the candidate image filesystem without running it and check every named path.
 
 ```bash
 podman create --name runtime-inspect "$RUNTIME_IMAGE" >/dev/null
@@ -157,8 +157,22 @@ failing the upgrade: on 2026-10-22 the `source-control` sandbox network policy
 (github.com for `/usr/bin/git`) and the demo and docs sandbox ceilings naming
 `/usr/bin/python3.11` and `/usr/bin/curl` went inert on the published runtime,
 while the Codex executable, `/usr/local/bin/node` and `/usr/local/bin/gh` were
-unchanged, so Agent execution and model turns were unaffected. Removing the
-scratch image export afterwards keeps the private input directory small.
+unchanged, so Agent execution and model turns were unaffected. On 2026-11-02
+the published runtime restored `/usr/bin/git`, `/usr/bin/curl` and
+`/usr/bin/python3.14`, reactivating the `source-control` policy and the curl
+ceilings; the `python3.11` ceilings stay inert. Removing the scratch image
+export afterwards keeps the private input directory small.
+
+The runtime image bundles Codex, and the pnpm store path embeds its version.
+When the candidate runtime changes the bundled Codex version (0.163.0-alpha.2
+to 0.164.0 on 2026-11-02), the `credential_gateway` binaries entry must name
+the new path before the runtime rolls out, or every Codex-harness Agent loses
+approved execution at the switch. Add the new path alongside the old one
+through the [Installation change
+procedure](https://github.com/openclaw/openclaw-enterprise/blob/main/docs/guides/deploy/production-installation-changes.md)
+before the image upgrade, keep both entries through the transition, and drop
+the old path in a later reviewed change. Record the current path in
+`manifests/openshift/openshell-installation-fragment.yaml`.
 
 ### Switch an in-cluster installation to the published images
 
@@ -227,6 +241,26 @@ that needs a custom runtime, qualify the replacement image before redeploying it
 If intentionally discarding that trial, delete its Agent through OCC and wait for
 cleanup before the upgrade. Preserve the remaining Agents' PVCs. Pause other operators' Helm changes through completion or
 recovery.
+
+A deploy made outside this repository's flow (for example `oc set image` or
+`helm upgrade --set`, as on 2026-10-31 when newer images and the managed Slack
+proxy were applied) leaves the private baseline stale while the live release
+moves on. The helper fails safe on the mismatch, but only after its preflight
+job has already refused the rollback. Reconcile the baseline values with
+`helm get values oce -n openclaw-system --revision <n>` (image references,
+`slackProxy`, the `:latest@sha256:` spelling) and confirm the deployed
+controller's `io.openshell.harness.version` label matches the recorded source
+revision before starting.
+
+Agents with `channels.slack` enabled need `runtime.channels` in the
+Installation before upgrading to a release that enforces channel topology (the
+2026-11-02 carry images do). Run `scripts/prepare-slack` and apply it through
+the Installation change procedure first; the upgrade helper dispatches the
+fleet only after its own consistency checks pass, and an Installation
+correction made mid-upgrade permanently fails the resume's live-values check.
+On 2026-11-02 that meant deploying the refused Agent through OCC after the
+correction instead of resuming the evidence directory; prefer preparing
+`runtime.channels` before the upgrade so the resume path stays available.
 
 If the existing installation predates October 13, 2026, read the selected
 release's [OpenShell credential-source breaking change](https://github.com/openclaw/openclaw-enterprise/blob/main/docs/guides/deploy/breaking-changes-archive.md#2026-10-13-openshell-openai-credential-sources-need-replacing)
@@ -341,11 +375,24 @@ matching chart version instead.
 
 Keep the current transport and authentication settings during this version
 upgrade. The GitHub App authority and HTTPS/mTLS cutover need their own reviewed
-Installation and Gateway changes.
+Installation and Gateway changes. OCE images containing upstream PR #4098
+(carry `574a7cb9`, published 2026-11-02) ship the code for GitHub App access,
+but the image bump alone does not enable it. The cutover still needs all of
+the following, each as a separately reviewed change:
+
+- Authenticated HTTPS to the Gateway: mTLS, or HTTPS with a bearer token, for
+  selected-repository access.
+- The `oce-prepared-git` middleware with `http_request_pre_credentials`, TLS
+  trust, Gateway JWT verification, and network access to the OCE worker
+  authority.
+- Removal of the uninspected GitHub rule.
+- Preservation of existing model credentials and dashboard OIDC settings.
+
 After the version upgrade, use the separate [mTLS cutover procedure](openshell-mtls.md)
-to configure authenticated management with cert-manager while preserving dashboard
-OIDC. Apply its overlays to the live values; do not replace them with fresh-install
-values. Its CA post-renderer must remain selected on subsequent Gateway upgrades.
+for the authenticated management step with cert-manager while preserving dashboard
+OIDC. It does not enable repository middleware or remove the GitHub rule. Apply
+its overlays to the live values; do not replace them with fresh-install values.
+Its CA post-renderer must remain selected on subsequent Gateway upgrades.
 
 Download and verify the selected charts using the
 [OpenShell chart preparation](cluster.md#stage-openshell-separately), then run:
