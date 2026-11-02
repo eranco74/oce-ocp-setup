@@ -33,6 +33,11 @@ OCE's copied leaf credential and restart its clients. Plan CA rotation separatel
 Always retain the post-renderer on subsequent Gateway Helm upgrades.
 It marks the chart PKI resources for retention so a transport rollback does not
 garbage-collect their Certificates/Issuers and potentially their backing Secrets.
+Fresh `openshell-mtls-server-tls` and `openshell-mtls-client-tls` Secret names
+avoid adopting the old chart's long-lived generated certificates: cert-manager
+can report an imported certificate Ready without reissuing it under the new CA.
+Keep the old Secrets for rollback and verify issuer, chain and lifetime, not only
+the Certificate Ready condition.
 
 ## 1. Capture the baseline and prepare candidates
 

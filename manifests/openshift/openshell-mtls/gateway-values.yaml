@@ -14,9 +14,11 @@ server:
     allowUnauthenticatedUsers: false
   tls:
     enableMtls: true
-    certSecretName: openshell-server-tls
+    # Use fresh names: cert-manager can accept an imported legacy certificate
+    # without reissuing it under the new CA or the requested lifetime.
+    certSecretName: openshell-mtls-server-tls
     clientCaSecretName: openshell-server-client-ca
-    clientTlsSecretName: openshell-client-tls
+    clientTlsSecretName: openshell-mtls-client-tls
 pkiInitJob:
   enabled: true
 certManager:
