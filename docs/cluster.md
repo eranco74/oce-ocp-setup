@@ -201,11 +201,14 @@ unrelated Pod; a healthy Route alone does not prove the policy boundary.
 
 ## Stage OpenShell separately
 
-The OpenShell values pin the v0.1.5 gateway, sandbox and supervisor images
+The OpenShell values pin the v0.1.6 gateway, sandbox and supervisor images
+to the Red Hat Konflux builds published on `quay.io/opendatahub`
+(`odh-openshell-gateway`, `odh-openshell-supervisor`, `odh-openshell-sandbox`,
+release tag `v0.1.6-rhaiv.3`, from the `opendatahub-io/openshell` midstream)
 and retain the OpenShift admission settings.
 OpenShell requires OpenShift 4.19 or later with Landlock available; see the
-[versioned OpenShift requirements](https://docs.nvidia.com/openshell/v0.1.5/kubernetes/openshift).
-Use the published gateway and workspace Helm charts for the same `0.1.5`
+[versioned OpenShift requirements](https://docs.nvidia.com/openshell/v0.1.6/kubernetes/openshift).
+Use the published gateway and workspace Helm charts for the same `0.1.6`
 release. Review their ServiceAccounts, network policies, SCC admission, and image
 references against this cluster. The values allow unauthenticated OCE calls to
 the gateway over the isolated cluster network for this trial and disable OpenShell resource
@@ -221,7 +224,7 @@ rendered name and size.
 
 The values allow Sandbox template labels under `openclaw.dev/*`, plus
 `app.kubernetes.io/name` and `app.kubernetes.io/managed-by`. OpenShell 0.1.5
-rejects other caller-supplied Pod labels. Keep this allowlist when merging live
+and later reject other caller-supplied Pod labels. Keep this allowlist when merging live
 values, or OCE cannot create replacement Sandboxes.
 
 The gateway ingress policy
@@ -267,7 +270,7 @@ oc -n agent-sandbox-system rollout status \
 ```
 
 Pull the published charts from GitHub Container Registry into the private input
-directory. The chart version is `0.1.5` (without the release tag's leading
+directory. The chart version is `0.1.6` (without the release tag's leading
 `v`). Verify both package checksums, then render the gateway without applying it:
 
 **Download and verify OpenShell charts.**
@@ -278,20 +281,20 @@ directory. The chart version is `0.1.5` (without the release tag's leading
 install -d -m 700 "$OCC_INPUT_DIRECTORY/openshell-charts"
 
 helm pull oci://ghcr.io/nvidia/openshell/helm-chart \
-  --version 0.1.5 --destination "$OCC_INPUT_DIRECTORY/openshell-charts"
+  --version 0.1.6 --destination "$OCC_INPUT_DIRECTORY/openshell-charts"
 
 helm pull oci://ghcr.io/nvidia/openshell/openshell-workspace \
-  --version 0.1.5 --destination "$OCC_INPUT_DIRECTORY/openshell-charts"
+  --version 0.1.6 --destination "$OCC_INPUT_DIRECTORY/openshell-charts"
 
 printf '%s  %s\n' \
-  c163ea6a906934def4c18ea6ca47ef4f6d2d4e7f94ffea60a505144699d6592b \
-  "$OCC_INPUT_DIRECTORY/openshell-charts/helm-chart-0.1.5.tgz" \
-  d33f183e0d2ed39435812f8ed7859c3f5c066e16f3b3c3c5e839521e40ccbd1a \
-  "$OCC_INPUT_DIRECTORY/openshell-charts/openshell-workspace-0.1.5.tgz" \
+  0533ecf84f777954aaf6113a0813fbc9781ed2a5e6574fb807cebe9a818a1bd4 \
+  "$OCC_INPUT_DIRECTORY/openshell-charts/helm-chart-0.1.6.tgz" \
+  10452d43dcf24ff795239dc5daa0fffd509a16ff57739019f0ec084bb7ca37c5 \
+  "$OCC_INPUT_DIRECTORY/openshell-charts/openshell-workspace-0.1.6.tgz" \
   | shasum -a 256 -c
 
 helm template openshell-gateway \
-  "$OCC_INPUT_DIRECTORY/openshell-charts/helm-chart-0.1.5.tgz" \
+  "$OCC_INPUT_DIRECTORY/openshell-charts/helm-chart-0.1.6.tgz" \
   --namespace openshell-system \
   --set agentSandbox.preflight.enabled=false \
   -f manifests/openshift/openshell-gateway-values.yaml \
@@ -315,7 +318,7 @@ oc apply -f \
   manifests/openshift/base/openshell/openshell-gateway-network-policy.yaml
 
 helm upgrade --install openshell-gateway \
-  "$OCC_INPUT_DIRECTORY/openshell-charts/helm-chart-0.1.5.tgz" \
+  "$OCC_INPUT_DIRECTORY/openshell-charts/helm-chart-0.1.6.tgz" \
   --namespace openshell-system \
   -f manifests/openshift/openshell-gateway-values.yaml \
   --wait --timeout 7m

@@ -1,6 +1,6 @@
 # Add the OpenShell dashboard to the OpenShift dev cluster
 
-Run from the `oce-ocp-setup` repository root after OCC, OpenShell 0.1.5, and the
+Run from the `oce-ocp-setup` repository root after OCC, OpenShell 0.1.6, and the
 single-instance Crunchy PostgreSQL database are working. This recipe installs
 dashboard 0.1.0 in `openshell-system` and Keycloak in `openshell-auth`.
 It creates one `dashboard-admin` login. Keycloak is used only by this dashboard;
@@ -149,7 +149,7 @@ helm get values openshell-gateway -n openshell-system -o yaml \
   > "$DASHBOARD_INPUT_DIRECTORY/gateway-values-before.yaml"
 
 helm upgrade openshell-gateway \
-  "$OCC_SETUP_DIRECTORY/openshell-charts/helm-chart-0.1.5.tgz" \
+  "$OCC_SETUP_DIRECTORY/openshell-charts/helm-chart-0.1.6.tgz" \
   --namespace openshell-system \
   -f "$DASHBOARD_INPUT_DIRECTORY/gateway-values-before.yaml" \
   -f "$DASHBOARD_INPUT_DIRECTORY/gateway-oidc-values.yaml" \
