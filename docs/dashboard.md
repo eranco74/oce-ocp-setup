@@ -143,6 +143,9 @@ mode or change OpenShell TLS as part of this recipe: OCC's Backend would need a
 separate authentication change. Adding OIDC does not secure every existing
 private-network client. The gateway remains private and retains its ingress
 restriction. Its rolling restart briefly interrupts gateway connections.
+For an existing deployment's coordinated transport change, follow the
+[mTLS cutover procedure](openshell-mtls.md); it retains this OIDC configuration
+and adds public CA trust to the dashboard without an administrator client key.
 
 ```bash
 helm get values openshell-gateway -n openshell-system -o yaml \

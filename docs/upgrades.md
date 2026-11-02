@@ -342,6 +342,10 @@ matching chart version instead.
 Keep the current transport and authentication settings during this version
 upgrade. The GitHub App authority and HTTPS/mTLS cutover need their own reviewed
 Installation and Gateway changes.
+After the version upgrade, use the separate [mTLS cutover procedure](openshell-mtls.md)
+to configure authenticated management with cert-manager while preserving dashboard
+OIDC. Apply its overlays to the live values; do not replace them with fresh-install
+values. Its CA post-renderer must remain selected on subsequent Gateway upgrades.
 
 Download and verify the selected charts using the
 [OpenShell chart preparation](cluster.md#stage-openshell-separately), then run:
