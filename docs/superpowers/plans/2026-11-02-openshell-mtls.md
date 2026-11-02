@@ -34,4 +34,4 @@ dedicated OCE client Certificate. Preserve OIDC and existing runtime state.
 - [x] Document preparation, cutover, verification, renewal and rollback; link
       from the installation, upgrade and dashboard guides.
 - [x] Validate shell/YAML/Kustomize, links and formatting; review the whole diff.
-- [ ] Create a signed-off commit and PR; report validation and live-proof gaps.
+- [x] Create a signed-off commit and PR; report validation and live-proof gaps.
