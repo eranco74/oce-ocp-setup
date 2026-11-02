@@ -6,6 +6,11 @@ Use the private kubeconfig and Route prepared during cluster preparation. Read t
 
 **Set installation inputs.**
 
+For authenticated management on an existing installation, follow the separate
+[OpenShell mTLS cutover](openshell-mtls.md) after installation and dashboard setup.
+It coordinates the Gateway, OCE and dashboard clients rather than changing TLS
+in only one component.
+
 ```bash
 umask 077
 

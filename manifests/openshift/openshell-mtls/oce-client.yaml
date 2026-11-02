@@ -1,0 +1,28 @@
+# Issued by the CA from the existing openshell-gateway Helm release.
+# This dedicated leaf credential is mirrored to openclaw-system by the operator.
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: oce-openshell-admin
+  namespace: openshell-system
+spec:
+  secretName: oce-openshell-admin
+  commonName: oce-controller
+  # OpenShell maps X.509 OUs to ordinary user/admin roles. CN alone has no roles.
+  subject:
+    organizationalUnits:
+      - openshell-user
+      - openshell-admin
+  duration: 2160h
+  renewBefore: 360h
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+    rotationPolicy: Always
+  usages:
+    - client auth
+    - digital signature
+  issuerRef:
+    name: openshell-gateway-ca-issuer
+    kind: Issuer
+    group: cert-manager.io

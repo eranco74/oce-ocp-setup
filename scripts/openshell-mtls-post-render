@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Helm post-renderer for the pinned openshell-gateway release, not a cluster tool.
+# Always use it on later upgrades while this cert-manager CA remains selected.
+set -euo pipefail
+exec yq eval '
+  with(select(.apiVersion == "cert-manager.io/v1");
+    .metadata.annotations."helm.sh/resource-policy" = "keep"
+  ) |
+  with(select(.kind == "Certificate" and .metadata.name == "openshell-gateway-ca");
+    .spec.duration = "87600h" |
+    .spec.renewBefore = "8760h" |
+    .spec.privateKey.rotationPolicy = "Never"
+  )' -

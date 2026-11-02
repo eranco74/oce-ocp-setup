@@ -1,0 +1,37 @@
+# Overlay the current protected Helm values; never install this file alone.
+# Requires cert-manager. Preserve the existing OIDC overlay and image digests.
+gatewayConfig:
+  openshell.gateway.auth:
+    allow_unauthenticated_users: false
+  openshell.gateway.mtls_auth:
+    # OIDC suppresses the automatic mTLS-user default: enable both explicitly.
+    enabled: true
+    # GitHub repository access needs no runtime-credential extraction authority.
+    operator_enabled: false
+server:
+  disableTls: false
+  auth:
+    allowUnauthenticatedUsers: false
+  tls:
+    enableMtls: true
+    # Use fresh names: cert-manager can accept an imported legacy certificate
+    # without reissuing it under the new CA or the requested lifetime.
+    certSecretName: openshell-mtls-server-tls
+    clientCaSecretName: openshell-server-client-ca
+    clientTlsSecretName: openshell-mtls-client-tls
+pkiInitJob:
+  enabled: true
+certManager:
+  enabled: true
+  caSecretName: openshell-ca-tls
+  clientCaFromServerTlsSecret: true
+  certificateDuration: 2160h
+  certificateRenewBefore: 360h
+  serverDnsNames:
+    - openshell-gateway.openshell-system.svc
+    - openshell-gateway.openshell-system.svc.cluster.local
+    # OCE's routed Sandbox WebSocket URLs use this domain even with fullnameOverride.
+    - openshell.localhost
+    - "*.openshell.localhost"
+  serverIpAddresses:
+    - 127.0.0.1

@@ -388,6 +388,12 @@ the following, each as a separately reviewed change:
 - Removal of the uninspected GitHub rule.
 - Preservation of existing model credentials and dashboard OIDC settings.
 
+After the version upgrade, use the separate [mTLS cutover procedure](openshell-mtls.md)
+for the authenticated management step with cert-manager while preserving dashboard
+OIDC. It does not enable repository middleware or remove the GitHub rule. Apply
+its overlays to the live values; do not replace them with fresh-install values.
+Its CA post-renderer must remain selected on subsequent Gateway upgrades.
+
 Download and verify the selected charts using the
 [OpenShell chart preparation](cluster.md#stage-openshell-separately), then run:
 

@@ -1,0 +1,9 @@
+# Overlay the current dashboard Helm values, retaining OIDC and cookie Secrets.
+gateway:
+  url: grpcs://openshell-gateway.openshell-system.svc:8080
+  tls:
+    enabled: true
+  caSecretName: openshell-dashboard-gateway-ca
+  caKey: ca.crt
+  # Dashboard requests use the forwarded user's OIDC token, never OCE's key.
+  clientCertSecretName: ""
