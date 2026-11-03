@@ -37,3 +37,7 @@ The optional `openshell-git/` resources are outside the base stages. Its
 Kustomization prepares OpenShift service-CA resources; the Helm fragments and
 supervisor egress rule require private inputs and explicit rollout steps from
 the [protected Git guide](../../docs/openshell-github-app.md).
+The `openshell-git/upstream-repositories.json` template adds upstream candidate
+policy to a compatible private registry; follow the
+[scope checks and preparation steps](../../docs/upstream-repositories.md) before
+rendering it. It is not included in the Kustomization or applied automatically.

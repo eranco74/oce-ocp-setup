@@ -78,6 +78,12 @@ contents, pull-request and issue writes for two repositories. Do not substitute
 an installation-wide token or assume this profile imposes branch restrictions;
 GitHub permissions and branch rules still apply.
 
+For `openclaw/openclaw-enterprise` and `openclaw/openclaw` candidates with Contents
+read and PR/issue writes, use [the upstream candidate template and scope
+checks](upstream-repositories.md). These entries require a compatible App
+installation and cannot share an Agent grant with Contents-write fork entries
+in the exercised release. This setup PR does not update the private live registry.
+
 Prepare the worker-only signing-key and 32-byte custody-key Secrets through the
 release's procedure. Keep all values, registry contents, key material, kubeconfigs
 and verification logs private. Copy only the Gateway JWT **public** key into

@@ -1,0 +1,36 @@
+[
+  {
+    "repositoryRef": "upstream-openclaw-enterprise",
+    "repositoryId": "${UPSTREAM_OCE_REPOSITORY_ID}",
+    "repository": "openclaw/openclaw-enterprise",
+    "namespaces": [
+      {
+        "namespaceId": "${OCC_NAMESPACE}",
+        "profiles": ["github-repository"],
+        "permissions": {
+          "metadata": "read",
+          "contents": "read",
+          "pull_requests": "write",
+          "issues": "write"
+        }
+      }
+    ]
+  },
+  {
+    "repositoryRef": "upstream-openclaw",
+    "repositoryId": "${UPSTREAM_OPENCLAW_REPOSITORY_ID}",
+    "repository": "openclaw/openclaw",
+    "namespaces": [
+      {
+        "namespaceId": "${OCC_NAMESPACE}",
+        "profiles": ["github-repository"],
+        "permissions": {
+          "metadata": "read",
+          "contents": "read",
+          "pull_requests": "write",
+          "issues": "write"
+        }
+      }
+    ]
+  }
+]
