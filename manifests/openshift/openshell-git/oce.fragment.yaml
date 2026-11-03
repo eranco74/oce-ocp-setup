@@ -1,0 +1,33 @@
+# Merge into private CURRENT OCE values; fill required operator inputs first.
+# Create the named key Secrets separately. Their bytes never belong in values.
+repositoryCredentials:
+  enabled: false
+  authority: prepared-git
+  backendId: repository-backend
+  registryConfigMapName: "" # Required: immutable, versioned registry ConfigMap.
+  appKeySecretName: oce-github-app
+  preparedCustodySecretName: oce-github-custody
+  upstreamCidrs: [] # Required: verified GitHub API destination ranges.
+  upstreamPort: 443
+openshellGit:
+  enabled: true
+  mode: protected
+  port: 8445
+  tlsSecretName: oce-openshell-git-tls
+  issuerPublicKeyConfigMapName: oce-openshell-gateway-public
+  clients:
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: openshell-system
+      podSelector:
+        matchLabels:
+          app.kubernetes.io/name: openshell
+          app.kubernetes.io/instance: openshell-gateway
+    - namespaceSelector:
+        matchLabels:
+          openshell.ai/openclaw-workspace: "true"
+      podSelector:
+        matchLabels:
+          openshell.ai/managed-by: openshell
+          openshell.ai/boundary-role: supervisor
+          openshell.ai/gateway-id: openshell-gateway

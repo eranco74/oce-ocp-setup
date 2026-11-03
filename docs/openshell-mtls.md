@@ -9,8 +9,8 @@ Schedule a maintenance window: OCC, dashboard and Agent connections can pause.
 The 2026-11-02 Red Hat runtime restored `git` and `curl`, so existing
 `source-control` and curl policies are active again. This management-only change
 leaves those policies in place. Remove the uninspected GitHub rule only in the
-separate reviewed repository-middleware cutover, when its protected replacement
-is ready.
+separate reviewed [repository-middleware cutover](openshell-github-app.md), when
+its protected replacement is ready.
 
 This procedure is for the existing `openshell-gateway` and `openshell-dashboard`
 releases in `openshell-system`, and `oce` in `openclaw-system`. Review names and

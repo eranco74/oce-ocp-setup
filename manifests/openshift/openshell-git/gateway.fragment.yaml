@@ -1,0 +1,22 @@
+# Merge into private CURRENT Gateway values, retaining mTLS and all existing lists.
+# Append these volumes/mounts; Helm replaces arrays rather than merging entries.
+server:
+  extraVolumes:
+    - name: oce-git-service-ca
+      configMap:
+        name: oce-git-service-ca
+  extraVolumeMounts:
+    - name: oce-git-service-ca
+      mountPath: /etc/openshell/oce-git-ca
+      readOnly: true
+gatewayConfig:
+  openshell.supervisor:
+    middleware:
+      - name: oce-prepared-git
+        binding_policy: allowlist
+        bindings: [http_request_pre_credentials]
+        grpc_endpoint: https://openclaw-enterprise-openshell-git.openclaw-system.svc:8445
+        tls_ca_cert_path: /etc/openshell/oce-git-ca/service-ca.crt
+        audience: oce-prepared-git
+        max_payload_bytes: 4194304
+        timeout: 5s

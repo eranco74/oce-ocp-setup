@@ -107,6 +107,11 @@ To inspect the private OpenShell gateway, use the optional
 [OpenShell dashboard recipe](dashboard.md). It adds a separate
 Keycloak login without changing OCC or Agent sign-in.
 
+For GitHub App repository access, follow [protected OpenShell Git](openshell-github-app.md)
+after the [mTLS cutover](openshell-mtls.md). Review its Installation-wide credential,
+per-Agent network-policy and finite-grant restrictions before using the ordinary
+additional-Agent recipes in that Installation.
+
 ## Agent task brief
 
 Agents follow the same recipe. The operator enters the API key locally and runs
