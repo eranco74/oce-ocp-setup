@@ -1,0 +1,35 @@
+# Optional prerequisites; not included in the base installation.
+# These names assume Helm release oce in openclaw-system.
+apiVersion: v1
+kind: Service
+metadata:
+  name: openclaw-enterprise-openshell-git
+  namespace: openclaw-system
+  annotations:
+    service.beta.openshift.io/serving-cert-secret-name: oce-openshell-git-tls
+    meta.helm.sh/release-name: oce
+    meta.helm.sh/release-namespace: openclaw-system
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: openclaw-enterprise
+    app.kubernetes.io/instance: oce
+    app.kubernetes.io/component: worker
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: openclaw-enterprise
+    app.kubernetes.io/instance: oce
+    app.kubernetes.io/component: worker
+  ports:
+    - name: openshell-git
+      port: 8445
+      targetPort: openshell-git
+      protocol: TCP
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oce-git-service-ca
+  namespace: openshell-system
+  annotations:
+    service.beta.openshift.io/inject-cabundle: "true"

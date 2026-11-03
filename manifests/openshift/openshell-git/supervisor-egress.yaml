@@ -1,0 +1,27 @@
+# Apply only in an observed supervisor namespace, with an explicit oc -n.
+# Also append this object to sandbox.gateway.networkPolicyResources in the
+# private Installation so future workspaces receive the same allowance.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-oce-prepared-git
+spec:
+  podSelector:
+    matchLabels:
+      openshell.ai/managed-by: openshell
+      openshell.ai/boundary-role: supervisor
+      openshell.ai/gateway-id: openshell-gateway
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: openclaw-system
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: openclaw-enterprise
+              app.kubernetes.io/instance: oce
+              app.kubernetes.io/component: worker
+      ports:
+        - protocol: TCP
+          port: 8445

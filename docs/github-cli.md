@@ -5,6 +5,11 @@ to an existing dedicated Codex Agent. The verified request is `gh api user` at
 `api.github.com`; this does not configure authenticated git clone or push.
 Choose a fine-grained PAT limited to the repositories and permissions needed.
 
+This recipe is for ordinary Credential Gateway configurations. It is incompatible
+with the repository-only Credential Proxy configuration used by
+[protected GitHub App access](openshell-github-app.md); do not attach this extra
+`bearer-token` source there. Use the App's approved repository bindings instead.
+
 ## 1. Enable tool credentials once per Installation
 
 In the protected `installation.yaml`, add `/usr/local/bin/gh` to

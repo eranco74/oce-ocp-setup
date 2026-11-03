@@ -32,3 +32,8 @@ application. Credentials and generated overlays stay outside this checkout.
 Helm values, Installation fragments, and image-build templates remain alongside
 these directories. Helm still manages OCC, OpenShell, and Envoy; the owning
 guides cover builds, database initialization, credentials, and readiness waits.
+
+The optional `openshell-git/` resources are outside the base stages. Its
+Kustomization prepares OpenShift service-CA resources; the Helm fragments and
+supervisor egress rule require private inputs and explicit rollout steps from
+the [protected Git guide](../../docs/openshell-github-app.md).

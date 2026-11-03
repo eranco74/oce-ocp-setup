@@ -28,7 +28,8 @@ scripts/build-occ
 - **Shared Agent:** [custom-model team Agent recipe](docs/shared-agent.md), with shared sessions and Gateway administration.
 - **Experimental team identities:** [Keycloak member login](docs/team-login.md), requiring [OCE PR #3049](https://github.com/openclaw/openclaw-enterprise/pull/3049), which is open and not yet merged.
 - **OpenShell policy demo:** [deny, approve and retry](docs/policy-demo.md), available on OCE main after PR #2599 merged.
-- **GitHub CLI:** [attach a PAT to one Agent](docs/github-cli.md).
+- **GitHub App repositories:** [protected Git through OpenShell](docs/openshell-github-app.md), including compatibility and grant-lifetime limits.
+- **GitHub CLI with ordinary Credential Gateway:** [attach a PAT to one Agent](docs/github-cli.md).
 - **Slack:** [enable the installation proxies and connect an Agent](docs/slack.md).
 - **Personal Keycloak login:** [reuse an existing account for another Agent](docs/agent-keycloak-login.md).
 - **Scoped owners:** [owner access](docs/owner-access.md); cluster-admin access remains an explicit alternative.
@@ -61,9 +62,9 @@ and image digests for every release.
 The recipes were exercised on OpenShift 4.22.17, Kubernetes 1.35.8 and amd64,
 with OpenShell 0.1.4, Crunchy 5.8.9 and single-instance PostgreSQL without backups.
 
-The recipes now select OpenShell 0.1.5; the cluster upgrade and model-turn
-verification are pending. Follow [Upgrade OpenShell](docs/upgrades.md#upgrade-openshell-separately)
-for the version change.
-This is a development setup, not a production qualification. Dashboard OIDC is
-separate from OCC/Agent login. Existing OpenShell private-network authentication
-remains development-only and must retain its network isolation.
+The OpenShell manifests select Red Hat `0.1.6-rhaiv.3`. Gateway mTLS was exercised
+on 2026-11-02 and protected GitHub App access on 2026-11-03; follow their linked
+runbooks and limitations above. Use [Upgrade OpenShell](docs/upgrades.md#upgrade-openshell-separately)
+for image changes. This is a development setup, not a production qualification.
+Dashboard OIDC is separate from OCC/Agent login. Retain network isolation alongside
+authenticated management.
