@@ -101,8 +101,10 @@ candidate and obtain deployment authorization before changing the cluster.
 
 Refresh repository choices in OCE and confirm both upstream candidates appear
 for the intended Namespace. Select only a supported permission group, preserve
-model and channel settings, and deploy the Agent. Existing revisions retain
-their previous grants until retired.
+model and channel settings, and deploy the Agent. Existing revisions do not gain
+the new repository access; their original grant deadlines and current
+authorization checks still apply. Removing a binding can withdraw access before
+that deadline or runtime retirement.
 
 Through that Agent, verify `git ls-remote` and API reads of repository metadata,
 open PRs and issues for both upstreams. Confirm an unselected repository remains
