@@ -103,6 +103,24 @@ bin/occ namespace get "$OCC_NAMESPACE"
 Wait for OCC Namespace status `ready`. New Namespaces inherit the configured
 private routing; do not run the existing-tenant policy replacement procedure.
 
+### Namespaces created outside this recipe
+
+The tenant grants are an operator step, not something OCC applies itself: the
+controller's service accounts hold only namespace-scoped creation rights at the
+cluster level, and every permission inside a tenant namespace comes from the
+RoleBindings `grant-tenant-access` creates. Local `dev-up` environments skip
+this by binding the tenant ClusterRoles cluster-wide, which upstream documents
+as not valid for shared clusters.
+
+A Namespace created through the Control UI or the admin console without the
+grants never converges: provisioning stays pending on denied tenant access
+until the 15-minute deadline, then the Namespace reports `failed`. It also
+cannot be deleted afterwards, because the delete path's sandbox cleanup needs
+the same tenant RoleBindings and fails permanently. Recover by running
+`scripts/grant-tenant-access` with that Namespace's `OCC_NAMESPACE`, then
+retry the delete or provisioning. Presets count as content: remove a failed
+Namespace's default presets before OCC accepts its deletion.
+
 ## 3. Register this Agent's OpenAI credential
 
 Enter an authorized key at the hidden prompt. The request file briefly contains
