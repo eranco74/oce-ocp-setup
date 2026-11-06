@@ -1,0 +1,180 @@
+#!/usr/bin/env bash
+#
+# kuberead: read-only OpenShift API access for the RedClaw sandbox.
+#
+# It reads the pinned single-cluster kubeconfig, refuses write verbs on the
+# client side, and forwards read requests to curl. RBAC remains the real
+# boundary; this helper is defense in depth.
+
+set -euo pipefail
+
+usage() {
+    cat >&2 <<'EOF'
+Usage:
+  kuberead get RESOURCE [-n NAMESPACE]
+  kuberead logs POD -n NAMESPACE
+  kuberead raw /api/path
+
+kuberead is read-only. Use 'raw' for API paths that 'get' does not cover.
+EOF
+    exit 2
+}
+
+die() {
+    printf 'kuberead: %s\n' "$1" >&2
+    exit "${2:-1}"
+}
+
+resource_prefix() {
+    case $1 in
+        pods|services|endpoints|events|persistentvolumeclaims|limitranges|resourcequotas)
+            printf '%s\n' /api/v1
+            ;;
+        deployments|replicasets|statefulsets|daemonsets|controllerrevisions)
+            printf '%s\n' /apis/apps/v1
+            ;;
+        jobs|cronjobs)
+            printf '%s\n' /apis/batch/v1
+            ;;
+        routes)
+            printf '%s\n' /apis/route.openshift.io/v1
+            ;;
+        networkpolicies)
+            printf '%s\n' /apis/networking.k8s.io/v1
+            ;;
+        horizontalpodautoscalers)
+            printf '%s\n' /apis/autoscaling/v2
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+supported_resources() {
+    printf '%s\n' \
+        "pods services endpoints events persistentvolumeclaims limitranges resourcequotas" \
+        "deployments replicasets statefulsets daemonsets controllerrevisions" \
+        "jobs cronjobs" \
+        "routes" \
+        "networkpolicies" \
+        "horizontalpodautoscalers"
+}
+
+kubeconfig=${KUBEREAD_KUBECONFIG:-$(dirname "$0")/kubeconfig}
+if [[ ! -f $kubeconfig ]]; then
+    die "kubeconfig not found at $kubeconfig"
+fi
+
+read_kubeconfig_value() {
+    awk -v key="    $1: " 'index($0, key) == 1 { print substr($0, length(key) + 1); exit }' "$kubeconfig"
+}
+
+server=$(read_kubeconfig_value server)
+ca_data=$(read_kubeconfig_value certificate-authority-data)
+token=$(read_kubeconfig_value token)
+
+missing=()
+[[ -n $server ]] || missing+=(server)
+[[ -n $ca_data ]] || missing+=(certificate-authority-data)
+[[ -n $token ]] || missing+=(token)
+if (( ${#missing[@]} > 0 )); then
+    die "kubeconfig $kubeconfig is missing or has an empty ${missing[*]}; expected the pinned 4-space indented single-cluster format"
+fi
+
+ca_file=$(mktemp)
+trap 'rm -f "$ca_file"' EXIT
+if ! printf '%s' "$ca_data" | base64 -d >"$ca_file" 2>/dev/null; then
+    die "kubeconfig $kubeconfig certificate-authority-data is not valid base64"
+fi
+
+subcommand=${1:-}
+if (( $# > 0 )); then
+    shift
+fi
+
+case $subcommand in
+    create|apply|delete|patch|replace|edit|label|annotate|scale|rollout|exec)
+        die "kuberead is read-only; refusing the '$subcommand' verb" 2
+        ;;
+esac
+
+namespace=""
+path=""
+case $subcommand in
+    get)
+        resource=${1:-}
+        if [[ -z $resource ]]; then
+            usage
+        fi
+        shift
+        while (( $# > 0 )); do
+            case $1 in
+                -n)
+                    if (( $# < 2 )); then
+                        die "'-n' requires a namespace" 2
+                    fi
+                    namespace=$2
+                    shift 2
+                    ;;
+                *)
+                    die "unexpected argument for get: $1" 2
+                    ;;
+            esac
+        done
+        if ! prefix=$(resource_prefix "$resource"); then
+            die "unsupported resource '$resource'; supported resources are: $(supported_resources | tr '\n' ' '); use 'kuberead raw /api/path' for any other API path"
+        fi
+        if [[ -n $namespace ]]; then
+            path="${prefix}/namespaces/${namespace}/${resource}"
+        else
+            path="${prefix}/${resource}"
+        fi
+        ;;
+    logs)
+        pod=${1:-}
+        if [[ -z $pod ]]; then
+            usage
+        fi
+        shift
+        while (( $# > 0 )); do
+            case $1 in
+                -n)
+                    if (( $# < 2 )); then
+                        die "'-n' requires a namespace" 2
+                    fi
+                    namespace=$2
+                    shift 2
+                    ;;
+                *)
+                    die "unexpected argument for logs: $1" 2
+                    ;;
+            esac
+        done
+        if [[ -z $namespace ]]; then
+            die "logs requires '-n NAMESPACE'" 2
+        fi
+        path="/api/v1/namespaces/${namespace}/pods/${pod}/log"
+        ;;
+    raw)
+        if (( $# == 0 )); then
+            usage
+        fi
+        path=$1
+        shift
+        if (( $# > 0 )); then
+            die "raw takes a single API path" 2
+        fi
+        if [[ ${path:0:1} != / ]]; then
+            die "raw requires an API path starting with '/'" 2
+        fi
+        ;;
+    *)
+        usage
+        ;;
+esac
+
+curl --fail --silent --show-error --retry 2 \
+    --cacert "$ca_file" \
+    -H "Authorization: Bearer $token" \
+    "${server}${path}"
