@@ -1,0 +1,131 @@
+#!/usr/bin/env bash
+# Prepare RedClaw's read-only cluster access files in the private input directory.
+set -euo pipefail
+umask 077
+
+REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
+: "${OCC_BIN:=$REPO_ROOT/bin/occ}"
+: "${OCC_AGENT_ID:=agt_9fae6206-cef6-4cb9-bc1f-cbc3904967a9}"
+: "${OCC_NAMESPACE_ID:=ns_8acb193b-f55f-4b6a-9be8-c748a744a505}"
+: "${AGENT_SA:=agent-c66e33c482ff}"
+
+if [[ -z ${OCC_INPUT_DIRECTORY:-} ]]; then
+  printf 'Set OCC_INPUT_DIRECTORY to a private directory outside the repository.\n' >&2
+  exit 1
+fi
+if [[ -z ${OCC_URL:-} ]]; then
+  printf 'Set OCC_URL to the OCE Console origin.\n' >&2
+  exit 1
+fi
+if [[ -z ${OCC_SERVICE_KEY_FILE:-} ]]; then
+  printf 'Set OCC_SERVICE_KEY_FILE to the OCC service-key file.\n' >&2
+  exit 1
+fi
+if [[ ! -x $OCC_BIN ]]; then
+  printf 'OCC_BIN %s is not executable; build bin/occ with scripts/build-occ or set OCC_BIN.\n' "$OCC_BIN" >&2
+  exit 1
+fi
+
+if ! oc whoami >/dev/null 2>&1; then
+  printf 'oc whoami failed; log in to the target OCE cluster with KUBECONFIG set.\n' >&2
+  exit 1
+fi
+
+tenant=$(oc get serviceaccount -A --field-selector "metadata.name=$AGENT_SA" -o json |
+  jq -er --arg name "$AGENT_SA" '.items |
+    if length == 1 then .[0].metadata.namespace
+    else error("Expected exactly one ServiceAccount named \($name); found \(length)") end')
+printf 'Tenant namespace: %s\n' "$tenant"
+
+output="$OCC_INPUT_DIRECTORY/redclaw-readonly"
+if [[ -e $output ]]; then
+  printf '%s already exists; remove it before re-running.\n' "$output" >&2
+  exit 1
+fi
+install -d -m 700 "$output"
+
+kubeconfig_tmp=""
+cleanup() {
+  if [[ -n $kubeconfig_tmp ]]; then
+    rm -f "$kubeconfig_tmp"
+  fi
+}
+trap cleanup EXIT
+
+secret=redclaw-readonly-token
+token_b64=$(oc -n "$tenant" get secret "$secret" -o jsonpath='{.data.token}')
+ca_b64=$(oc -n "$tenant" get secret "$secret" -o jsonpath='{.data.ca\.crt}')
+token=$(printf '%s' "$token_b64" | base64 -d)
+ca_pem=$(printf '%s' "$ca_b64" | base64 -d)
+if [[ -z $token ]]; then
+  printf 'The token Secret %s in namespace %s has no token; the token Secret may not be populated yet. Wait for the ServiceAccount token controller and re-run.\n' "$secret" "$tenant" >&2
+  exit 1
+fi
+if [[ -z $ca_pem ]]; then
+  printf 'The token Secret %s in namespace %s has no ca.crt; the token Secret may not be populated yet. Wait for the ServiceAccount token controller and re-run.\n' "$secret" "$tenant" >&2
+  exit 1
+fi
+
+cluster_ip=$(oc -n default get svc kubernetes -o jsonpath='{.spec.clusterIP}')
+if [[ -z $cluster_ip ]]; then
+  printf 'The kubernetes Service in namespace default has no ClusterIP.\n' >&2
+  exit 1
+fi
+
+kubeconfig_tmp=$(mktemp "$output/.kubeconfig.XXXXXX")
+cat >"$kubeconfig_tmp" <<EOF
+apiVersion: v1
+kind: Config
+clusters:
+- cluster:
+    server: https://$cluster_ip:443
+    certificate-authority-data: $ca_b64
+  name: redclaw-readonly
+contexts:
+- context:
+    cluster: redclaw-readonly
+    user: redclaw-readonly
+  name: redclaw-readonly
+current-context: redclaw-readonly
+users:
+- name: redclaw-readonly
+  user:
+    token: $token
+EOF
+install -m 600 "$kubeconfig_tmp" "$output/kubeconfig"
+rm -f "$kubeconfig_tmp"
+kubeconfig_tmp=""
+
+install -m 755 "$REPO_ROOT/manifests/agents/redclaw-readonly/kuberead" \
+  "$output/kuberead"
+install -m 644 "$REPO_ROOT/manifests/agents/redclaw-readonly/agents-md-fragment.md" \
+  "$output/agents-md-fragment.md"
+
+if ! policy_json=$("$OCC_BIN" agent policy get "$OCC_AGENT_ID" \
+  --namespace "$OCC_NAMESPACE_ID" -o json); then
+  printf 'occ agent policy get failed for %s in %s; check OCC_URL and OCC_SERVICE_KEY_FILE.\n' "$OCC_AGENT_ID" "$OCC_NAMESPACE_ID" >&2
+  exit 1
+fi
+
+if ! policy_update=$(jq -n --argjson policy "$policy_json" --arg host "$cluster_ip" '
+  {
+    expectedVersion: $policy.policy.version,
+    additions: (
+      [($policy.policy.additions // [])[] | select(.id != "redclaw-readonly-kube")]
+      + [{
+          id: "redclaw-readonly-kube",
+          binary: "/usr/bin/curl",
+          host: $host,
+          ports: [{from: 443, to: 443}]
+        }]
+    )
+  }
+'); then
+  printf 'occ agent policy get returned invalid JSON for %s in %s.\n' "$OCC_AGENT_ID" "$OCC_NAMESPACE_ID" >&2
+  exit 1
+fi
+printf '%s\n' "$policy_update" >"$output/policy-update.json"
+
+for file in kubeconfig kuberead agents-md-fragment.md policy-update.json; do
+  sha256sum "$output/$file"
+done
