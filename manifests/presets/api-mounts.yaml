@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: openclaw-enterprise-api
+spec:
+  template:
+    spec:
+      volumes:
+      - name: installation-startup
+        secret:
+          items:
+          - key: installation.yaml
+            path: installation.yaml
+          - key: chief-of-staff.json
+            path: chief-of-staff.json
+          - key: question-and-answer.json
+            path: question-and-answer.json
+          - key: software-eng-team.json
+            path: software-eng-team.json
