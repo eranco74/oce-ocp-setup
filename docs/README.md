@@ -94,7 +94,9 @@ entry points: direct user access and OCC-authorized administration.
 ## Create additional Agents
 
 To connect an existing Agent to Slack, follow [Slack setup](slack.md). It enables
-both installation proxy paths before configuring the Agent in OCC.
+both installation proxy paths before configuring the Agent in OCC. To give an
+existing Agent read-only OCE cluster visibility, follow
+[RedClaw read-only cluster access](redclaw-readonly.md).
 
 After deploying OCC once, follow the [additional Agent recipe](agents.md).
 Each Codex Agent gets its own Namespace and Control UI Route. All Agents use
