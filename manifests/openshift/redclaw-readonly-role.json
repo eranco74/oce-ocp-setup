@@ -1,0 +1,1083 @@
+{
+  "apiVersion": "rbac.authorization.k8s.io/v1",
+  "kind": "ClusterRole",
+  "metadata": {
+    "name": "oce-redclaw-readonly",
+    "labels": {
+      "app.kubernetes.io/managed-by": "oce-ocp-setup"
+    }
+  },
+  "rules": [
+    {
+      "apiGroups": [
+        "operators.coreos.com"
+      ],
+      "resources": [
+        "clusterserviceversions",
+        "catalogsources",
+        "installplans",
+        "subscriptions",
+        "operatorgroups"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "packages.operators.coreos.com"
+      ],
+      "resources": [
+        "packagemanifests",
+        "packagemanifests/icon"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apiextensions.k8s.io"
+      ],
+      "resourceNames": [
+        "bundles.trust.cert-manager.io"
+      ],
+      "resources": [
+        "customresourcedefinitions"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        "trust.cert-manager.io"
+      ],
+      "resources": [
+        "bundles"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "cert-manager.io"
+      ],
+      "resources": [
+        "certificates",
+        "certificaterequests",
+        "issuers"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "acme.cert-manager.io"
+      ],
+      "resources": [
+        "challenges",
+        "orders"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apiextensions.k8s.io"
+      ],
+      "resourceNames": [
+        "certificaterequests.cert-manager.io"
+      ],
+      "resources": [
+        "customresourcedefinitions"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        "cert-manager.io"
+      ],
+      "resources": [
+        "certificaterequests"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apiextensions.k8s.io"
+      ],
+      "resourceNames": [
+        "certificates.cert-manager.io"
+      ],
+      "resources": [
+        "customresourcedefinitions"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        "cert-manager.io"
+      ],
+      "resources": [
+        "certificates"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apiextensions.k8s.io"
+      ],
+      "resourceNames": [
+        "certmanagers.operator.openshift.io"
+      ],
+      "resources": [
+        "customresourcedefinitions"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        "operator.openshift.io"
+      ],
+      "resources": [
+        "certmanagers"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apiextensions.k8s.io"
+      ],
+      "resourceNames": [
+        "challenges.acme.cert-manager.io"
+      ],
+      "resources": [
+        "customresourcedefinitions"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        "acme.cert-manager.io"
+      ],
+      "resources": [
+        "challenges"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apiextensions.k8s.io"
+      ],
+      "resourceNames": [
+        "clusterissuers.cert-manager.io"
+      ],
+      "resources": [
+        "customresourcedefinitions"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        "cert-manager.io"
+      ],
+      "resources": [
+        "clusterissuers"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apiextensions.k8s.io"
+      ],
+      "resourceNames": [
+        "crunchybridgeclusters.postgres-operator.crunchydata.com"
+      ],
+      "resources": [
+        "customresourcedefinitions"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        "postgres-operator.crunchydata.com"
+      ],
+      "resources": [
+        "crunchybridgeclusters"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apiextensions.k8s.io"
+      ],
+      "resourceNames": [
+        "issuers.cert-manager.io"
+      ],
+      "resources": [
+        "customresourcedefinitions"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        "cert-manager.io"
+      ],
+      "resources": [
+        "issuers"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apiextensions.k8s.io"
+      ],
+      "resourceNames": [
+        "istiocsrs.operator.openshift.io"
+      ],
+      "resources": [
+        "customresourcedefinitions"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        "operator.openshift.io"
+      ],
+      "resources": [
+        "istiocsrs"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apiextensions.k8s.io"
+      ],
+      "resourceNames": [
+        "kataconfigs.kataconfiguration.openshift.io"
+      ],
+      "resources": [
+        "customresourcedefinitions"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        "kataconfiguration.openshift.io"
+      ],
+      "resources": [
+        "kataconfigs"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apiextensions.k8s.io"
+      ],
+      "resourceNames": [
+        "keycloakrealmimports.k8s.keycloak.org"
+      ],
+      "resources": [
+        "customresourcedefinitions"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        "k8s.keycloak.org"
+      ],
+      "resources": [
+        "keycloakrealmimports"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apiextensions.k8s.io"
+      ],
+      "resourceNames": [
+        "keycloaks.k8s.keycloak.org"
+      ],
+      "resources": [
+        "customresourcedefinitions"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        "k8s.keycloak.org"
+      ],
+      "resources": [
+        "keycloaks"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apiextensions.k8s.io"
+      ],
+      "resourceNames": [
+        "mustgathers.managed.openshift.io"
+      ],
+      "resources": [
+        "customresourcedefinitions"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        "managed.openshift.io"
+      ],
+      "resources": [
+        "mustgathers"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "k8s.ovn.org"
+      ],
+      "resources": [
+        "userdefinednetworks"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apiextensions.k8s.io"
+      ],
+      "resourceNames": [
+        "orders.acme.cert-manager.io"
+      ],
+      "resources": [
+        "customresourcedefinitions"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        "acme.cert-manager.io"
+      ],
+      "resources": [
+        "orders"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "packages.operators.coreos.com"
+      ],
+      "resources": [
+        "packagemanifests"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apiextensions.k8s.io"
+      ],
+      "resourceNames": [
+        "peerpods.confidentialcontainers.org"
+      ],
+      "resources": [
+        "customresourcedefinitions"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        "confidentialcontainers.org"
+      ],
+      "resources": [
+        "peerpods"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apiextensions.k8s.io"
+      ],
+      "resourceNames": [
+        "pgadmins.postgres-operator.crunchydata.com"
+      ],
+      "resources": [
+        "customresourcedefinitions"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        "postgres-operator.crunchydata.com"
+      ],
+      "resources": [
+        "pgadmins"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apiextensions.k8s.io"
+      ],
+      "resourceNames": [
+        "pgupgrades.postgres-operator.crunchydata.com"
+      ],
+      "resources": [
+        "customresourcedefinitions"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        "postgres-operator.crunchydata.com"
+      ],
+      "resources": [
+        "pgupgrades"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apiextensions.k8s.io"
+      ],
+      "resourceNames": [
+        "postgresclusters.postgres-operator.crunchydata.com"
+      ],
+      "resources": [
+        "customresourcedefinitions"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        "postgres-operator.crunchydata.com"
+      ],
+      "resources": [
+        "postgresclusters"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "",
+        "image.openshift.io"
+      ],
+      "resources": [
+        "imagestreamimages",
+        "imagestreammappings",
+        "imagestreams",
+        "imagestreamtags",
+        "imagetags"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "",
+        "image.openshift.io"
+      ],
+      "resources": [
+        "imagestreams/layers"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "namespaces"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        "",
+        "project.openshift.io"
+      ],
+      "resources": [
+        "projects"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "endpoints",
+        "persistentvolumeclaims",
+        "persistentvolumeclaims/status",
+        "pods",
+        "replicationcontrollers",
+        "replicationcontrollers/scale",
+        "serviceaccounts",
+        "services",
+        "services/status"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "bindings",
+        "limitranges",
+        "namespaces/status",
+        "pods/log",
+        "pods/status",
+        "replicationcontrollers/status",
+        "resourcequotas",
+        "resourcequotas/status"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "namespaces"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "",
+        "events.k8s.io"
+      ],
+      "resources": [
+        "events"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "discovery.k8s.io"
+      ],
+      "resources": [
+        "endpointslices"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apps"
+      ],
+      "resources": [
+        "controllerrevisions",
+        "daemonsets",
+        "daemonsets/status",
+        "deployments",
+        "deployments/scale",
+        "deployments/status",
+        "replicasets",
+        "replicasets/scale",
+        "replicasets/status",
+        "statefulsets",
+        "statefulsets/scale",
+        "statefulsets/status"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "autoscaling"
+      ],
+      "resources": [
+        "horizontalpodautoscalers",
+        "horizontalpodautoscalers/status"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "batch"
+      ],
+      "resources": [
+        "cronjobs",
+        "cronjobs/status",
+        "jobs",
+        "jobs/status"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "extensions"
+      ],
+      "resources": [
+        "daemonsets",
+        "daemonsets/status",
+        "deployments",
+        "deployments/scale",
+        "deployments/status",
+        "ingresses",
+        "ingresses/status",
+        "networkpolicies",
+        "replicasets",
+        "replicasets/scale",
+        "replicasets/status",
+        "replicationcontrollers/scale"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "policy"
+      ],
+      "resources": [
+        "poddisruptionbudgets",
+        "poddisruptionbudgets/status"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "networking.k8s.io"
+      ],
+      "resources": [
+        "ingresses",
+        "ingresses/status",
+        "networkpolicies"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "resource.k8s.io"
+      ],
+      "resources": [
+        "resourceclaims",
+        "resourceclaims/status",
+        "resourceclaimtemplates"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "metrics.k8s.io"
+      ],
+      "resources": [
+        "pods",
+        "nodes"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "snapshot.storage.k8s.io"
+      ],
+      "resources": [
+        "volumesnapshots"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "",
+        "build.openshift.io"
+      ],
+      "resources": [
+        "buildconfigs",
+        "buildconfigs/webhooks",
+        "builds"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "",
+        "build.openshift.io"
+      ],
+      "resources": [
+        "builds/log"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "",
+        "apps.openshift.io"
+      ],
+      "resources": [
+        "deploymentconfigs",
+        "deploymentconfigs/scale"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "",
+        "apps.openshift.io"
+      ],
+      "resources": [
+        "deploymentconfigs/log",
+        "deploymentconfigs/status"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "",
+        "image.openshift.io"
+      ],
+      "resources": [
+        "imagestreams/status"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "",
+        "quota.openshift.io"
+      ],
+      "resources": [
+        "appliedclusterresourcequotas"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "",
+        "route.openshift.io"
+      ],
+      "resources": [
+        "routes"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "",
+        "route.openshift.io"
+      ],
+      "resources": [
+        "routes/status"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "",
+        "template.openshift.io"
+      ],
+      "resources": [
+        "processedtemplates",
+        "templateconfigs",
+        "templateinstances",
+        "templates"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "",
+        "build.openshift.io"
+      ],
+      "resources": [
+        "buildlogs"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "resourcequotausages"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "gateway.networking.k8s.io"
+      ],
+      "resources": [
+        "gateways"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "gateway.networking.k8s.io"
+      ],
+      "resources": [
+        "httproutes",
+        "grpcroutes",
+        "referencegrants",
+        "backendtlspolicies"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    },
+    {
+      "apiGroups": [
+        "apiextensions.k8s.io"
+      ],
+      "resourceNames": [
+        "trustmanagers.operator.openshift.io"
+      ],
+      "resources": [
+        "customresourcedefinitions"
+      ],
+      "verbs": [
+        "get"
+      ]
+    },
+    {
+      "apiGroups": [
+        "operator.openshift.io"
+      ],
+      "resources": [
+        "trustmanagers"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "watch"
+      ]
+    }
+  ]
+}
