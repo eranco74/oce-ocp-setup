@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+# Grant RedClaw read-only cluster access across the OCE namespaces.
+set -euo pipefail
+: "${AGENT_SA:=agent-c66e33c482ff}"
+REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
+CLUSTERROLE=oce-redclaw-readonly
+FIXED_NAMESPACES=(
+  openclaw-system
+  openclaw-postgres
+  openshell-system
+  openshell-auth
+  agent-sandbox-system
+  envoy-gateway-system
+)
+
+tenant=$(oc get serviceaccount -A --field-selector "metadata.name=$AGENT_SA" -o json |
+  jq -er --arg name "$AGENT_SA" '.items |
+    if length == 1 then .[0].metadata.namespace
+    else error("Expected exactly one ServiceAccount named \($name); found \(length)") end')
+export tenant
+printf 'Tenant namespace: %s\n' "$tenant"
+
+oc apply -f "$REPO_ROOT/manifests/openshift/redclaw-readonly-role.json"
+
+oc -n "$tenant" apply -f - <<EOF
+{
+  "apiVersion": "v1",
+  "kind": "ServiceAccount",
+  "metadata": {"name": "redclaw-readonly", "namespace": "$tenant"}
+}
+EOF
+
+oc -n "$tenant" apply -f - <<EOF
+{
+  "apiVersion": "v1",
+  "kind": "Secret",
+  "metadata": {
+    "name": "redclaw-readonly-token",
+    "namespace": "$tenant",
+    "annotations": {"kubernetes.io/service-account.name": "redclaw-readonly"}
+  },
+  "type": "kubernetes.io/serviceaccount-token"
+}
+EOF
+
+tenant_namespaces=$(oc get namespaces -l openclaw.dev/namespace \
+  -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
+sorted=$( {
+  printf '%s\n' "${FIXED_NAMESPACES[@]}"
+  printf '%s\n' "$tenant_namespaces"
+} | sed '/^$/d' | sort -u)
+mapfile -t namespaces <<< "$sorted"
+
+if ! printf '%s\n' "${namespaces[@]}" | grep -Fxq -- "$tenant"; then
+  printf 'Tenant namespace %s is outside the grant scope; check its openclaw.dev/namespace label.\n' "$tenant" >&2
+  exit 1
+fi
+
+for namespace in "${namespaces[@]}"; do
+  oc -n "$namespace" apply -f - <<EOF
+{
+  "apiVersion": "rbac.authorization.k8s.io/v1",
+  "kind": "RoleBinding",
+  "metadata": {"name": "$CLUSTERROLE", "namespace": "$namespace"},
+  "roleRef": {
+    "apiGroup": "rbac.authorization.k8s.io",
+    "kind": "ClusterRole",
+    "name": "$CLUSTERROLE"
+  },
+  "subjects": [
+    {
+      "kind": "ServiceAccount",
+      "name": "redclaw-readonly",
+      "namespace": "$tenant"
+    }
+  ]
+}
+EOF
+  printf 'granted read: %s\n' "$namespace"
+done
+
+impersonation="system:serviceaccount:$tenant:redclaw-readonly"
+read_answer=$(oc auth can-i list pods -n openclaw-system --as="$impersonation")
+if [[ "$read_answer" != "yes" ]]; then
+  printf 'Expected "yes" for list pods -n openclaw-system as %s; got "%s".\n' "$impersonation" "$read_answer" >&2
+  exit 1
+fi
+deny_answer=$(oc auth can-i get configmaps -n "$tenant" --as="$impersonation")
+if [[ "$deny_answer" != "no" ]]; then
+  printf 'Expected "no" for get configmaps -n %s as %s; got "%s".\n' "$tenant" "$impersonation" "$deny_answer" >&2
+  exit 1
+fi
+printf 'Self-check: yes list pods -n openclaw-system, no get configmaps -n %s\n' "$tenant"
+printf 'Granted read access in %d namespaces.\n' "${#namespaces[@]}"
