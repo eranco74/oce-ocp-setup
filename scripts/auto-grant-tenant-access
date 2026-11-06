@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# One reconciliation pass: ensure every live OCE tenant namespace holds its
+# operator RoleBindings. Designed to run from the ose-cli image inside the
+# tenant-grants CronJob; also safe to run by hand with cluster-admin oc.
+set -euo pipefail
+
+# binding:clusterrole:serviceaccount
+GRANTS=(
+  openclaw-enterprise-worker:oce-openclaw-tenant-worker:openclaw-enterprise-worker
+  openclaw-enterprise-worker-openshell:oce-openshell-workspace-writer:openclaw-enterprise-worker
+  openclaw-enterprise-api-observer:oce-openclaw-gateway-observer:openclaw-enterprise-api
+  openclaw-enterprise-api-secrets:oce-openclaw-tenant-api:openclaw-enterprise-api
+  openclaw-enterprise-api-configuration:oce-openclaw-tenant-configuration:openclaw-enterprise-api
+)
+
+for tenant in $(oc get namespaces -l openclaw.dev/namespace -o name); do
+  ns=${tenant#namespace/}
+  # Skip namespaces already leaving; their grants are moot.
+  if [[ -n "$(oc get namespace "$ns" -o jsonpath='{.metadata.deletionTimestamp}')" ]]; then
+    continue
+  fi
+  id=$(oc get namespace "$ns" -o jsonpath='{.metadata.labels.openclaw\.dev/namespace}')
+  labeled=$(oc get namespace "$ns" -o jsonpath='{.metadata.annotations.openclaw\.dev/namespace-id}')
+  if [[ "$id" != "$labeled" ]]; then
+    echo "skipping $ns: namespace label and annotation disagree" >&2
+    continue
+  fi
+  for grant in "${GRANTS[@]}"; do
+    binding=${grant%%:*}
+    role=$([[ "$grant" =~ :([^:]+): ]] && printf '%s' "${BASH_REMATCH[1]}")
+    account=${grant##*:}
+    if oc -n "$ns" get rolebinding "$binding" >/dev/null 2>&1; then
+      continue
+    fi
+    oc -n "$ns" create rolebinding "$binding" --clusterrole="$role" \
+      --serviceaccount="openclaw-system:$account"
+    echo "granted $binding to openclaw-system/$account in $ns ($id)"
+  done
+done

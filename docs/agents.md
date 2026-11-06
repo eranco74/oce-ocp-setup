@@ -121,6 +121,32 @@ the same tenant RoleBindings and fails permanently. Recover by running
 retry the delete or provisioning. Presets count as content: remove a failed
 Namespace's default presets before OCC accepts its deletion.
 
+To make the Control UI path safe without depending on operators remembering
+the manual step, deploy the tenant grants CronJob. It runs the same five
+grants for every live `openclaw.dev/namespace`-labeled namespace every two
+minutes, idempotently, well under the 15-minute convergence deadline:
+
+```bash
+export OSE_CLI_IMAGE='<pinned registry.redhat.io/openshift4/ose-cli digest>'
+
+oc -n openclaw-system create configmap auto-grant-tenant-access \
+  --from-file=auto-grant-tenant-access=scripts/auto-grant-tenant-access
+
+envsubst '${OSE_CLI_IMAGE}' < manifests/openshift/tenant-grants.yaml \
+  | oc apply -f -
+
+oc -n openclaw-system create job --from=cronjob/oce-tenant-grant \
+  oce-tenant-grant-manual
+```
+
+The last command runs one pass immediately instead of waiting for the
+schedule; check its Pod logs to confirm the grants. The
+`oce-tenant-grant` service account holds the operator's grant power
+(`bind`/`escalate` on exactly the five tenant ClusterRoles), so it must stay
+in `openclaw-system`, which dedicated admins control. Upstream issue for the
+undeletable-Namespace failure mode:
+[openclaw/openclaw-enterprise#4929](https://github.com/openclaw/openclaw-enterprise/issues/4929).
+
 ## 3. Register this Agent's OpenAI credential
 
 Enter an authorized key at the hidden prompt. The request file briefly contains

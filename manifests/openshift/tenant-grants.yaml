@@ -1,0 +1,118 @@
+# Automates the "Grant tenant RoleBindings" operator step for every namespace
+# OCE creates, so Namespaces made through the Control UI converge and stay
+# deletable. The oce-tenant-grant service account below holds the operator's
+# grant power (bind/escalate on the tenant ClusterRoles); it must remain
+# confined to openclaw-system, which dedicated admins control.
+#
+# Prerequisites: the ConfigMap with the grant script, built by the docs:
+#   oc -n openclaw-system create configmap auto-grant-tenant-access \
+#     --from-file=auto-grant-tenant-access=scripts/auto-grant-tenant-access
+# Render with envsubst, substituting ${OSE_CLI_IMAGE} with a pinned
+# registry.redhat.io/openshift4/ose-cli digest.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: oce-tenant-grant
+  namespace: openclaw-system
+  labels:
+    app.kubernetes.io/name: oce-tenant-grant
+    app.kubernetes.io/managed-by: oce-ocp-setup
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: oce-tenant-grant
+  labels:
+    app.kubernetes.io/name: oce-tenant-grant
+    app.kubernetes.io/managed-by: oce-ocp-setup
+rules:
+  - apiGroups: [""]
+    resources: [namespaces]
+    verbs: [get, list]
+  - apiGroups: [rbac.authorization.k8s.io]
+    resources: [rolebindings]
+    verbs: [get, create]
+  # Creating a RoleBinding that references a ClusterRole requires holding that
+  # role's permissions or escalating on it. Scope escalate to the exact tenant
+  # roles the grant step binds, nothing broader.
+  - apiGroups: [rbac.authorization.k8s.io]
+    resources: [clusterroles]
+    resourceNames:
+      - oce-openclaw-tenant-worker
+      - oce-openclaw-gateway-observer
+      - oce-openshell-workspace-writer
+      - oce-openclaw-tenant-api
+      - oce-openclaw-tenant-configuration
+    verbs: [bind, escalate]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oce-tenant-grant
+  labels:
+    app.kubernetes.io/name: oce-tenant-grant
+    app.kubernetes.io/managed-by: oce-ocp-setup
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: oce-tenant-grant
+subjects:
+  - kind: ServiceAccount
+    name: oce-tenant-grant
+    namespace: openclaw-system
+---
+# Runs every two minutes; the pass is idempotent and finishes in seconds. Any
+# cadence well under the 15-minute provisioning convergence deadline works.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: oce-tenant-grant
+  namespace: openclaw-system
+  labels:
+    app.kubernetes.io/name: oce-tenant-grant
+    app.kubernetes.io/managed-by: oce-ocp-setup
+spec:
+  schedule: "*/2 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: oce-tenant-grant
+        spec:
+          serviceAccountName: oce-tenant-grant
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: grant
+              image: ${OSE_CLI_IMAGE}
+              imagePullPolicy: IfNotPresent
+              command: ["/usr/bin/bash", "/scripts/auto-grant-tenant-access"]
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities:
+                  drop: ["ALL"]
+                runAsNonRoot: true
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+              volumeMounts:
+                - name: scripts
+                  mountPath: /scripts
+                  readOnly: true
+          volumes:
+            - name: scripts
+              configMap:
+                name: auto-grant-tenant-access
+                defaultMode: 0o550
