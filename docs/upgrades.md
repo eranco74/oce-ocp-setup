@@ -342,6 +342,53 @@ For a stopped or partially applied release, follow the upstream
 instead of starting a second upgrade. No push or deployment runs automatically
 when this repository or OCE main is fetched.
 
+## Retain and prune Installation configurations after verification
+
+Old Installation YAML copies do not all need to remain in the cluster. After an
+update passes its rollout and workload checks, use the current configuration and
+two previous verified configurations as the default retention target. Keep more
+when an active upgrade, recovery or separately reviewed cutover still needs them.
+Retain the protected `installation.yaml`, matching `values.yaml`, source commit,
+image digests and release evidence together outside both repositories. Retaining
+these inputs does not make a database migration reversible; follow the selected
+OCE release's recovery procedure before attempting a rollback.
+
+Installation Secrets are separate from Helm's release-history Secrets. Inspect
+the current release and retained history before selecting cleanup candidates:
+
+```bash
+helm --kubeconfig "$KUBECONFIG" -n openclaw-system history oce
+
+helm --kubeconfig "$KUBECONFIG" -n openclaw-system get values oce -o json |
+  jq '.installation | {secretName, key}'
+
+oc --kubeconfig "$KUBECONFIG" -n openclaw-system get secrets \
+  -o custom-columns=NAME:.metadata.name,TYPE:.type,CREATED:.metadata.creationTimestamp
+```
+
+Repeat `helm get values` with `--revision <n>` for each recovery revision to
+retain. Check the Deployment templates, running and pending Pods, Jobs, and old
+ReplicaSets for references to each candidate Secret. A zero-replica ReplicaSet
+can still reference an old Installation Secret. Names and creation dates alone
+do not establish that a Secret is unused.
+
+Prune obsolete Helm history and ReplicaSets together with the Installation
+Secrets they reference, after reviewing the exact objects and keeping the
+selected recovery configurations usable. Helm's
+[`--history-max`](https://helm.sh/docs/helm/helm_upgrade/)
+limits release records; it does not garbage-collect externally created
+Installation Secrets. Do not manually delete Helm release-history Secrets as a
+substitute for its history-retention controls. If a retained revision still
+depends on an Installation Secret, keep that Secret too.
+
+Keep the live Installation Secret and its `openclaw.dev/installation-id`
+annotation. Updating its YAML key through the documented Installation-change
+procedure does not require creating another named Secret for every edit. This
+cleanup is limited to obsolete Installation configurations and their deployment
+history; preserve database and Agent PVCs, identities, credential Secrets and
+release-specific recovery dependencies. No cleanup runs automatically as part of
+this repository's upgrade wrapper.
+
 ## Upgrade OpenShell separately
 
 OpenShell has its own Helm release and SQLite PVC. Back up that database
