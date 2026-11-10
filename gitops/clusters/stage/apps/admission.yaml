@@ -1,0 +1,26 @@
+# Wave 1: the control-plane Namespace, fixed-UID SCC and its exact grants.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: oce-admission
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: oce-stages
+  source:
+    repoURL: https://github.com/rh-oce-team/oce-ocp-setup.git
+    targetRevision: main
+    path: manifests/openshift/overlays/stage/admission
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openclaw-system
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    retry:
+      limit: 10
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 3m

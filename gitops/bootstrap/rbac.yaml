@@ -1,0 +1,56 @@
+# Intended least-privilege surface for the default OpenShift GitOps
+# application controller while it reconciles the five declarative stages.
+#
+# This is defense-in-depth, not the enforcement boundary: the operator grants
+# the default instance's controller cluster-admin independently of this
+# binding, and AppProject oce-stages is what actually restricts sources,
+# destinations and cluster-scoped kinds. Keep both.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: oce-argocd-stages
+rules:
+  - apiGroups: [""]
+    resources: [namespaces]
+    verbs: [get, list, watch, create, update, patch]
+  - apiGroups: [""]
+    resources: [events]
+    verbs: [create, patch]
+  - apiGroups: [networking.k8s.io]
+    resources: [networkpolicies]
+    verbs: [get, list, watch, create, update, patch, delete]
+  - apiGroups: [rbac.authorization.k8s.io]
+    resources: [roles, rolebindings, clusterroles]
+    verbs: [get, list, watch, create, update, patch, delete]
+  # The admission stage creates SecurityContextConstraints.
+  - apiGroups: [security.openshift.io]
+    resources: [securitycontextconstraints]
+    verbs: [get, list, watch, use, create, update, patch]
+  - apiGroups: [node.k8s.io]
+    resources: [runtimeclasses]
+    verbs: [get, list, watch, create, update, patch, delete]
+  - apiGroups: [gateway.networking.k8s.io]
+    resources: [gatewayclasses]
+    verbs: [get, list, watch, create, update, patch, delete]
+  - apiGroups: [operators.coreos.com]
+    resources: [subscriptions, operatorgroups]
+    verbs: [get, list, watch, create, update, patch, delete]
+  - apiGroups: [operators.coreos.com]
+    resources: [clusterserviceversions]
+    verbs: [get, list, watch]
+  - apiGroups: [postgres-operator.crunchydata.com]
+    resources: [postgresclusters]
+    verbs: [get, list, watch, create, update, patch, delete]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: oce-argocd-stages
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: oce-argocd-stages
+subjects:
+  - kind: ServiceAccount
+    name: openshift-gitops-argocd-application-controller
+    namespace: openshift-gitops

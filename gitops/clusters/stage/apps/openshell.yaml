@@ -1,0 +1,29 @@
+# Wave 2: OpenShell Namespace, RuntimeClass, workspace ClusterRole and the
+# gateway ingress and controller egress policies. The gateway Helm release
+# itself stays a runbook step: its post-renderer cannot run in an Argo CD Helm
+# source.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: oce-openshell
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  project: oce-stages
+  source:
+    repoURL: https://github.com/rh-oce-team/oce-ocp-setup.git
+    targetRevision: main
+    path: manifests/openshift/overlays/stage/openshell
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openshell-system
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    retry:
+      limit: 10
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 3m

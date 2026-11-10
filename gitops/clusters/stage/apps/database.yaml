@@ -1,0 +1,30 @@
+# Wave 1: the PostgreSQL cluster. Auto-synced so a fresh install does not
+# strand waves 2 and 3 behind a manual sync; the PostgresCluster health check
+# in gitops/bootstrap/argocd-resource-health.patch.yaml is what makes the wave
+# gate on real readiness. The retry limit is higher because OLM can take
+# several minutes to install the operator and register its CRD.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: oce-database
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: oce-stages
+  source:
+    repoURL: https://github.com/rh-oce-team/oce-ocp-setup.git
+    targetRevision: main
+    path: manifests/openshift/overlays/stage/database
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openclaw-postgres
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    retry:
+      limit: 50
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 3m

@@ -1,0 +1,17 @@
+# One Application per platform stage Argo reconciles. Sync waves mirror the
+# apply order in docs/kustomize.md; prune stays off so removing a resource from
+# Git never deletes it from the cluster until an operator does so by hand.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: openshift-gitops
+resources:
+  - operators.yaml
+  - database.yaml
+  - admission.yaml
+  - openshell.yaml
+  - routing.yaml
+labels:
+  - includeSelectors: false
+    pairs:
+      app.kubernetes.io/part-of: oce-gitops
+      oce-ocp-setup/cluster: stage

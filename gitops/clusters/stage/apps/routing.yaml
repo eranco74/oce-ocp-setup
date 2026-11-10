@@ -1,0 +1,28 @@
+# Wave 3: Envoy namespace, controller grants and the GatewayClass. The Envoy
+# Helm release stays a runbook step, so the GatewayClass can stay Progressing
+# until the controller is installed; the wave does not gate on it.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: oce-routing
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+spec:
+  project: oce-stages
+  source:
+    repoURL: https://github.com/rh-oce-team/oce-ocp-setup.git
+    targetRevision: main
+    path: manifests/openshift/overlays/stage/routing
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: envoy-gateway-system
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    retry:
+      limit: 10
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 3m

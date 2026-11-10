@@ -1,0 +1,29 @@
+# Wave 0: operator namespaces, OperatorGroups and Subscriptions.
+# The Subscription health check in gitops/bootstrap/argocd-resource-health.patch.yaml
+# holds this wave until every CSV is installed at its latest known version, so
+# wave 1 does not race CRD registration.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: oce-operators
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: oce-stages
+  source:
+    repoURL: https://github.com/rh-oce-team/oce-ocp-setup.git
+    targetRevision: main
+    path: manifests/openshift/overlays/stage/operators
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openclaw-postgres
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    retry:
+      limit: 10
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 3m

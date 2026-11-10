@@ -1,0 +1,12 @@
+# One-time bootstrap for a cluster that will run OpenShift GitOps.
+# Apply through scripts/bootstrap-argocd so the operator is ready, the ArgoCD
+# health customization is patched in, and the environment root is registered.
+# gitops-operator.yaml is applied separately, before this kustomization, because
+# the operator must be running before the argoproj.io CRDs exist.
+# argocd-resource-health.patch.yaml is deliberately not a resource here: it is
+# an oc patch document, not an applyable manifest.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - rbac.yaml
+  - app-project.yaml

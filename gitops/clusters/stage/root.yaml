@@ -1,0 +1,34 @@
+# Root Application for the stage cluster. scripts/bootstrap-argocd applies it
+# once by hand after the OpenShift GitOps operator, RBAC and AppProject are in
+# place; Argo then owns everything below gitops/clusters/stage/apps.
+#
+# targetRevision tracks main. The AGENTS.md freeze rule governs the OCE source
+# commit and image digests recorded for each release, not this configuration
+# repository; see docs/gitops.md.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: oce-stage-root
+  namespace: openshift-gitops
+  labels:
+    app.kubernetes.io/part-of: oce-gitops
+    oce-ocp-setup/cluster: stage
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/rh-oce-team/oce-ocp-setup.git
+    targetRevision: main
+    path: gitops/clusters/stage/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openshift-gitops
+  syncPolicy:
+    automated:
+      prune: false
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 15s
+        factor: 2
+        maxDuration: 3m

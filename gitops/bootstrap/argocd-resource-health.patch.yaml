@@ -1,0 +1,95 @@
+# Strategic-merge patch for the default ArgoCD custom resource.
+# Apply it with oc patch, never oc apply:
+#   oc -n openshift-gitops patch argocd openshift-gitops --type merge \
+#     --patch-file gitops/bootstrap/argocd-resource-health.patch.yaml
+#
+# The field is spec.resourceHealthChecks, the argocd-operator v1beta1 shape that
+# current OpenShift GitOps serves. The older spec.resourceCustomizations string
+# was removed from that CRD version. The patch replaces the whole list:
+# scripts/bootstrap-argocd applies it as committed and does not merge, so fold
+# any cluster-side checks into this file before running the bootstrap, or they
+# are reverted on the next run.
+#
+# Without these checks, Argo has no health signal for the CRs: the child
+# Applications report Healthy immediately and the root does not gate its waves,
+# while the database and operator stages race CRD registration.
+spec:
+  resourceHealthChecks:
+    - group: postgres-operator.crunchydata.com
+      kind: PostgresCluster
+      check: |
+        hs = {}
+        if obj.status == nil or obj.status.instances == nil then
+          hs.status = "Progressing"
+          hs.message = "Waiting for PostgresCluster status"
+          return hs
+        end
+        for _, instance in ipairs(obj.status.instances) do
+          if instance.replicas == nil or instance.readyReplicas == nil
+             or instance.readyReplicas ~= instance.replicas then
+            hs.status = "Progressing"
+            hs.message = "Waiting for PostgresCluster instances"
+            return hs
+          end
+        end
+        hs.status = "Healthy"
+        hs.message = "PostgresCluster is ready"
+        return hs
+    - group: operators.coreos.com
+      kind: Subscription
+      check: |
+        hs = {}
+        if obj.status == nil then
+          hs.status = "Progressing"
+          hs.message = "Waiting for Subscription status"
+          return hs
+        end
+        -- Read every condition before deciding: failures can coexist with a
+        -- pending install plan and a state left over from an earlier revision.
+        local pending = nil
+        for _, condition in ipairs(obj.status.conditions or {}) do
+          if condition.status == "True" then
+            if condition.type == "CatalogSourcesUnhealthy" or
+               condition.type == "InstallPlanFailed" or
+               condition.type == "ResolutionFailed" or
+               (condition.type == "InstallPlanMissing" and
+                condition.reason ~= "ReferencedInstallPlanNotFound") then
+              hs.status = "Degraded"
+              hs.message = condition.message or condition.type
+              return hs
+            end
+            if condition.type == "InstallPlanPending" then
+              pending = condition
+            end
+          end
+        end
+        if obj.status.state == "UpgradeFailed" then
+          hs.status = "Degraded"
+          hs.message = "Subscription upgrade failed"
+          return hs
+        end
+        if pending ~= nil then
+          hs.status = "Progressing"
+          hs.message = pending.message or pending.type
+          return hs
+        end
+        if obj.status.state == "AtLatestKnown" then
+          hs.status = "Healthy"
+          hs.message = "Subscription is at the latest known release"
+          return hs
+        end
+        hs.status = "Progressing"
+        hs.message = "Waiting for the Subscription install plan"
+        return hs
+    - group: argoproj.io
+      kind: Application
+      check: |
+        hs = {}
+        if obj.status ~= nil and obj.status.health ~= nil then
+          hs.status = obj.status.health.status
+          hs.message = obj.status.health.message
+          return hs
+        end
+        hs.status = "Progressing"
+        hs.message = "Waiting for Application health"
+        return hs

@@ -1,0 +1,36 @@
+# Enforcement boundary for the five stage Applications. The root Application
+# stays in project default because it creates the child Applications in
+# openshift-gitops, which is not a stage namespace.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: oce-stages
+  namespace: openshift-gitops
+spec:
+  description: Declarative OCE platform stages reconciled from oce-ocp-setup.
+  sourceRepos:
+    - https://github.com/rh-oce-team/oce-ocp-setup.git
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: openclaw-postgres
+    - server: https://kubernetes.default.svc
+      namespace: cert-manager-operator
+    - server: https://kubernetes.default.svc
+      namespace: openclaw-system
+    - server: https://kubernetes.default.svc
+      namespace: openshell-system
+    - server: https://kubernetes.default.svc
+      namespace: envoy-gateway-system
+  # Exactly the cluster-scoped kinds the five stages create. A missing kind
+  # blocks a whole sync wave.
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+    - group: security.openshift.io
+      kind: SecurityContextConstraints
+    - group: node.k8s.io
+      kind: RuntimeClass
+    - group: rbac.authorization.k8s.io
+      kind: ClusterRole
+    - group: gateway.networking.k8s.io
+      kind: GatewayClass
