@@ -80,12 +80,14 @@ EOF
 done
 
 impersonation="system:serviceaccount:$tenant:redclaw-readonly"
-read_answer=$(oc auth can-i list pods -n openclaw-system --as="$impersonation")
+# oc auth can-i exits nonzero when the answer is no, so tolerate its status
+# here and judge only the printed answer.
+read_answer=$(oc auth can-i list pods -n openclaw-system --as="$impersonation" || true)
 if [[ "$read_answer" != "yes" ]]; then
   printf 'Expected "yes" for list pods -n openclaw-system as %s; got "%s".\n' "$impersonation" "$read_answer" >&2
   exit 1
 fi
-deny_answer=$(oc auth can-i get configmaps -n "$tenant" --as="$impersonation")
+deny_answer=$(oc auth can-i get configmaps -n "$tenant" --as="$impersonation" || true)
 if [[ "$deny_answer" != "no" ]]; then
   printf 'Expected "no" for get configmaps -n %s as %s; got "%s".\n' "$tenant" "$impersonation" "$deny_answer" >&2
   exit 1

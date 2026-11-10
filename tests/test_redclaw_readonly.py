@@ -252,7 +252,9 @@ elif args[:2] == ["get", "namespaces"]:
 elif args[:2] == ["auth", "can-i"]:
     namespace = args[args.index("-n") + 1]
     key = args[2] + " " + args[3] + " -n " + namespace
-    print(state["can_i"].get(key, "no"))
+    answer = state["can_i"].get(key, "no")
+    print(answer)
+    sys.exit(1 if answer == "no" else 0)
 """
 
     def setUp(self):
