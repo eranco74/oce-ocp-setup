@@ -235,8 +235,9 @@ import sys
 
 args = sys.argv[1:]
 stdin = sys.stdin.read() if "-" in args else ""
-with open(%(log)r, "a") as stream:
-    stream.write(json.dumps({"argv": args, "stdin": stdin}) + "\\n")
+if "--patch-file" not in args:
+    with open(%(log)r, "a") as stream:
+        stream.write(json.dumps({"argv": args, "stdin": stdin}) + "\\n")
 with open(%(state)r) as stream:
     state = json.load(stream)
 
@@ -255,6 +256,19 @@ elif args[:2] == ["auth", "can-i"]:
     answer = state["can_i"].get(key, "no")
     print(answer)
     sys.exit(1 if answer == "no" else 0)
+elif args[:2] == ["create", "token"] or args[2:4] == ["create", "token"]:
+    print("minted-test-token")
+elif args[:2] == ["get", "configmap"] or args[2:4] == ["get", "configmap"]:
+    print("test-ca-pem")
+elif args[:2] == ["patch", "secret"] or args[2:4] == ["patch", "secret"]:
+    patch = {}
+    with open(args[args.index("--patch-file") + 1]) as stream:
+        patch = json.load(stream)
+    with open(%(log)r, "a") as stream:
+        stream.write(
+            json.dumps({"argv": args, "stdin": stdin, "patch": patch}) + "\\n"
+        )
+    sys.exit(0)
 """
 
     def setUp(self):
@@ -331,6 +345,38 @@ elif args[:2] == ["auth", "can-i"]:
         expected = ["apply", "-f", str(MANIFEST)]
         matches = [call for call in self.calls() if call["argv"] == expected]
         self.assertEqual(len(matches), 1, self.calls())
+
+    def test_mints_token_and_ca_into_secret(self):
+        result = self.run_script()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        minted = [
+            call
+            for call in self.calls()
+            if "create" in call["argv"]
+            and call["argv"][call["argv"].index("create") + 1] == "token"
+        ]
+        self.assertEqual(len(minted), 1, self.calls())
+        self.assertIn(
+            "--duration=31536000s",
+            minted[0]["argv"],
+        )
+        patches = [
+            call
+            for call in self.calls()
+            if "patch" in call["argv"]
+            and call["argv"][call["argv"].index("patch") + 1] == "secret"
+        ]
+        self.assertEqual(len(patches), 1, self.calls())
+        self.assertEqual(
+            patches[0]["argv"][patches[0]["argv"].index("-n") + 1], self.TENANT
+        )
+        data = patches[0]["patch"]["data"]
+        self.assertEqual(
+            base64.b64decode(data["token"]).decode(), "minted-test-token"
+        )
+        self.assertEqual(
+            base64.b64decode(data["ca.crt"]).decode(), "test-ca-pem"
+        )
 
     def test_creates_serviceaccount_and_token_secret_in_discovered_tenant(
         self,
@@ -714,7 +760,7 @@ sys.exit(2)
         self.write_oc_state(token="")
         result = self.run_script()
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("may not be populated yet", result.stderr)
+        self.assertIn("grant-redclaw-readonly", result.stderr)
         self.assertFalse((self.output / "kubeconfig").exists())
 
     def test_fails_when_oc_is_not_authenticated(self):

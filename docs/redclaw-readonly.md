@@ -95,8 +95,12 @@ Agent.
 
 The grant script discovers RedClaw's tenant namespace from the Agent
 ServiceAccount, applies the ClusterRole, creates the ServiceAccount and its
-long-lived token Secret, then binds the ServiceAccount in every scope
-namespace. It is idempotent and safe to re-run.
+token Secret, then binds the ServiceAccount in every scope namespace. The
+stage cluster's token controller does not populate manually created
+ServiceAccount token Secrets, so the script also mints a TokenRequest token
+(default duration one year, override with `TOKEN_DURATION`) and stores it
+with the cluster CA in the Secret. It is idempotent and safe to re-run;
+re-running mints a fresh token.
 
 ```bash
 oc whoami --show-server
@@ -110,6 +114,7 @@ and the namespace count:
 
 ```text
 Tenant namespace: <RedClaw tenant namespace>
+Minted token into redclaw-readonly-token (duration 31536000s).
 ...
 granted read: agent-sandbox-system
 granted read: envoy-gateway-system
@@ -148,8 +153,8 @@ Review `policy-update.json` locally. It must keep every existing addition
 (for example the GitHub egress suggestion) and append the
 `redclaw-readonly-kube` entry granting `/usr/bin/curl` access to the
 Kubernetes Service ClusterIP on port 443. If the script reports an empty
-token, wait for the ServiceAccount token controller to populate
-`redclaw-readonly-token`, remove the output directory, and re-run.
+token, re-run `scripts/grant-redclaw-readonly` to mint one, remove the
+output directory, and re-run.
 
 ## 4. Upload the Agent workspace files
 
@@ -263,24 +268,15 @@ observed read result and the refused write.
 
 ## 7. Rotate the credential
 
-The kubeconfig embeds a token. Replace the Secret and the workspace file;
-the ServiceAccount and RBAC grants stay unchanged. Using the
-`TENANT_NAMESPACE` from section 6:
+The kubeconfig embeds a minted token with a one-year duration. Replace the
+token and the workspace file; the ServiceAccount and RBAC grants stay
+unchanged. Re-running the grant script mints a fresh token and stores it in
+the Secret:
 
 ```bash
 rm -r "$OCC_INPUT_DIRECTORY/redclaw-readonly"
 
-oc -n "$TENANT_NAMESPACE" delete secret redclaw-readonly-token
-
 scripts/grant-redclaw-readonly
-```
-
-Wait until the new token is populated, then rebuild and re-upload the files:
-
-```bash
-until oc -n "$TENANT_NAMESPACE" get secret redclaw-readonly-token \
-  -o jsonpath='{.data.token}' | grep -q .; do sleep 5; done
-printf 'token ready\n'
 
 scripts/prepare-redclaw-readonly
 ```
@@ -288,7 +284,9 @@ scripts/prepare-redclaw-readonly
 Upload the new `kubeconfig` in the **Workspace files** tab and deploy a new
 Agent version. `kuberead` and `agents-md-fragment.md` are unchanged, so only
 the kubeconfig needs replacing. Re-run the section 5 `apply` step if the new
-Agent version needs the policy application again.
+Agent version needs the policy application again. Revocation does not wait
+for rotation: deleting the ServiceAccount, or the token Secret, invalidates
+the kubeconfig immediately.
 
 ## 8. Add a tenant
 

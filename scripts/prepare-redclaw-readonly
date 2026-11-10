@@ -58,11 +58,11 @@ ca_b64=$(oc -n "$tenant" get secret "$secret" -o jsonpath='{.data.ca\.crt}')
 token=$(printf '%s' "$token_b64" | base64 -d)
 ca_pem=$(printf '%s' "$ca_b64" | base64 -d)
 if [[ -z $token ]]; then
-  printf 'The token Secret %s in namespace %s has no token; the token Secret may not be populated yet. Wait for the ServiceAccount token controller and re-run.\n' "$secret" "$tenant" >&2
+  printf 'The token Secret %s in namespace %s has no token; run scripts/grant-redclaw-readonly to mint the token, then re-run.\n' "$secret" "$tenant" >&2
   exit 1
 fi
 if [[ -z $ca_pem ]]; then
-  printf 'The token Secret %s in namespace %s has no ca.crt; the token Secret may not be populated yet. Wait for the ServiceAccount token controller and re-run.\n' "$secret" "$tenant" >&2
+  printf 'The token Secret %s in namespace %s has no ca.crt; run scripts/grant-redclaw-readonly to mint the token, then re-run.\n' "$secret" "$tenant" >&2
   exit 1
 fi
 

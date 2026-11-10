@@ -2,6 +2,7 @@
 # Grant RedClaw read-only cluster access across the OCE namespaces.
 set -euo pipefail
 : "${AGENT_SA:=agent-c66e33c482ff}"
+: "${TOKEN_DURATION:=31536000s}"
 REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 CLUSTERROLE=oce-redclaw-readonly
 FIXED_NAMESPACES=(
@@ -42,6 +43,21 @@ oc -n "$tenant" apply -f - <<EOF
   "type": "kubernetes.io/serviceaccount-token"
 }
 EOF
+
+# The stage cluster's token controller does not populate manually created
+# ServiceAccount token Secrets, so mint a TokenRequest token and store it in
+# the Secret together with the cluster CA. The token is bound to the
+# ServiceAccount; deleting the ServiceAccount revokes it immediately.
+umask 077
+token_patch=$(mktemp)
+trap 'rm -f "$token_patch"' EXIT
+mints_token=$(oc -n "$tenant" create token redclaw-readonly --duration="$TOKEN_DURATION")
+cluster_ca=$(oc -n "$tenant" get configmap kube-root-ca.crt -o jsonpath='{.data.ca\.crt}')
+jq -n --arg token "$mints_token" --arg ca "$cluster_ca" \
+  '{data: {token: ($token | @base64), "ca.crt": ($ca | @base64)}}' > "$token_patch"
+oc -n "$tenant" patch secret redclaw-readonly-token --type merge --patch-file "$token_patch"
+rm -f "$token_patch"
+printf 'Minted token into redclaw-readonly-token (duration %s).\n' "$TOKEN_DURATION"
 
 tenant_namespaces=$(oc get namespaces -l openclaw.dev/namespace \
   -o jsonpath='{range .items[*]}{.metadata.name}{"\n"}{end}')
