@@ -5,6 +5,11 @@ OpenClaw Control Plane (OCC). Use dedicated Codex through
 OpenShell. Run the command blocks in order from the repository root. This is a
 test procedure, not a supported production OpenShell deployment.
 
+On a cluster bootstrapped with `scripts/bootstrap-argocd`, Argo CD already
+reconciles the operators, database, admission, openshell and routing stages.
+Skip their `oc apply` commands here; self-heal reverts them. See
+[the GitOps guide](gitops.md).
+
 ## Inspect the target before applying manifests
 
 These commands use the current context in your kubeconfig. Copy its credentials

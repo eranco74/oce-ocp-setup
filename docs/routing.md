@@ -5,6 +5,12 @@ deploying a dedicated Agent. Use its protected input directory and selected
 `KUBECONFIG`. Dedicated Codex storage requires private Envoy routing and node
 enrollment; OCC rejects the revision while routing is disabled.
 
+On a cluster bootstrapped with `scripts/bootstrap-argocd`, Argo CD owns the
+routing stage: the Envoy namespace, controller grants and GatewayClass are
+reconciled from `overlays/stage/routing`. Skip their `oc apply` commands here;
+the Envoy Helm release and CRD steps stay manual. See
+[the GitOps guide](gitops.md).
+
 ## Install Envoy Gateway
 
 Check the OpenShift-managed Gateway API bundle before selecting Envoy Gateway:

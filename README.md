@@ -37,6 +37,7 @@ scripts/build-occ
 - **OCC admin launcher:** [required setup for each Agent](docs/native-admin.md); enable globally once, then add each Agent's HTTPS endpoint and origin.
 - **Dashboard widgets:** [MCP Apps and widget preview access](docs/widgets.md).
 - **Updating OCE:** [build and upgrade workflow](docs/upgrades.md).
+- **GitOps:** [install Argo CD and reconcile the platform stages](docs/gitops.md) from this repository; Secrets, the Helm releases and the OCE upgrade lifecycle stay in the runbooks.
 - **Authenticated OpenShell management:** [mTLS cutover and renewal](docs/openshell-mtls.md), preserving dashboard OIDC.
 - **Manifest layout:** [Kustomize stages](docs/kustomize.md).
 - **Team Claw proposal:** [collaboration and identity plan](docs/team-claw-plan.md), pending agreement and implementation.

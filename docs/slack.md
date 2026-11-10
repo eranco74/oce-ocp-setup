@@ -73,6 +73,10 @@ Grant the managed proxy ServiceAccount the existing fixed-UID SCC. Patch only
 the Installation Secret's document key to preserve its ownership annotation.
 These commands assume the recipe's Helm release `oce` in `openclaw-system`.
 
+On a cluster bootstrapped with `scripts/bootstrap-argocd`, the admission stage
+owns the Role and RoleBinding in the first command; skip that `oc apply` and
+let Argo reconcile it. See [the GitOps guide](gitops.md).
+
 ```bash
 oc apply -f manifests/openshift/base/admission/control-plane-scc-rbac.yaml
 

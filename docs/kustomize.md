@@ -23,6 +23,7 @@ manifests/openshift/
 ├── overlays/test/
 │   ├── kustomization.yaml       Complete example inventory
 │   └── <stage>/kustomization.yaml
+├── overlays/stage/              Stage profile for the five Argo CD-reconciled stages
 └── prepare-kustomize            Add private overrides to a copy of the overlay
 ```
 
@@ -42,6 +43,11 @@ and Operator pins against the target cluster too.
 ## Prepare and apply a stage
 
 The helper needs `oc`, `yq`, and `python3`. Use the existing private input directory:
+
+On a cluster bootstrapped with `scripts/bootstrap-argocd`, skip the five stages
+Argo reconciles (operators, database, admission, openshell, routing) and use
+this flow only for control-plane, control-ui and control-ui-access. See
+[the GitOps guide](gitops.md).
 
 **Prepare, review, and apply a stage.**
 

@@ -10,6 +10,11 @@ separate source checkout.
 The procedure was exercised on OpenShift 4.22, two `amd64` workers,
 AWS EBS `gp3-csi`, and enforcing NetworkPolicies.
 
+On a cluster bootstrapped with Argo CD, the [GitOps guide](gitops.md) reconciles
+the operators, database, admission, openshell and routing stages. Skip the
+hand-applies for those stages there; the remaining steps and the other three
+stages are unchanged.
+
 For an existing installation, use the [image upgrade procedure](https://github.com/openclaw/openclaw-enterprise/blob/main/docs/guides/deploy/production-upgrade.md)
 instead of repeating bootstrap. Verify that the selected OpenClaw runtime can
 read the Agent's existing database schemas before replacing it; the stock pin

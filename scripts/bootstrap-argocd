@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+# Install OpenShift GitOps on the current cluster and register one environment's
+# root Application. One-time per cluster; rerun after changing the bootstrap
+# manifests or to recreate the root Application.
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: scripts/bootstrap-argocd --env <environment> [--dry-run]
+
+Install the OpenShift GitOps operator on the cluster selected by the current
+kubeconfig, apply the controller RBAC and the oce-stages AppProject, add the
+PostgresCluster health check to the default ArgoCD instance, and register the
+environment root Application.
+
+Options:
+  --env <name>  Environment to register. Only "stage" exists today.
+  --dry-run     Validate and print the commands without changing the cluster.
+  -h, --help    Show this help.
+EOF
+}
+
+die() {
+  printf 'error: %s\n' "$*" >&2
+  exit 2
+}
+
+environment=''
+dry_run=false
+while (($#)); do
+  case "$1" in
+    --env)
+      (($# >= 2)) || die '--env needs a value'
+      environment="$2"
+      shift 2
+      ;;
+    --env=*)
+      environment="${1#--env=}"
+      shift
+      ;;
+    --dry-run)
+      dry_run=true
+      shift
+      ;;
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    *)
+      die "unknown argument: $1"
+      ;;
+  esac
+done
+
+[[ -n "$environment" ]] || die 'set --env (only stage exists today)'
+case "$environment" in
+  stage) ;;
+  prod) die 'prod is a placeholder; see gitops/clusters/prod/README.md' ;;
+  *) die "unknown environment: $environment" ;;
+esac
+
+command -v oc >/dev/null 2>&1 || die 'oc is required'
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+bootstrap_dir="$repo_root/gitops/bootstrap"
+root_application="$repo_root/gitops/clusters/$environment/root.yaml"
+
+for path in \
+  "$bootstrap_dir/gitops-operator.yaml" \
+  "$bootstrap_dir/kustomization.yaml" \
+  "$bootstrap_dir/argocd-resource-health.patch.yaml" \
+  "$root_application"; do
+  [[ -f "$path" ]] || die "missing required file: $path"
+done
+
+step() {
+  printf '\n==> %s\n' "$*"
+}
+
+run() {
+  if $dry_run; then
+    printf 'Would run: oc'
+    printf ' %q' "$@"
+    printf '\n'
+    return 0
+  fi
+  oc "$@"
+}
+
+step 'Review the operator channel and current CSV before the first apply'
+cat <<'EOF'
+  oc -n openshift-marketplace get packagemanifest openshift-gitops-operator \
+    -o jsonpath='{.status.channels[*].name}{"\n"}'
+EOF
+
+if $dry_run; then
+  # Client-side apply needs the argoproj.io CRDs, which do not exist before
+  # the operator runs, so validate the render instead of the apply.
+  step 'Validate the bootstrap manifests render'
+  oc kustomize "$bootstrap_dir" >/dev/null
+fi
+
+step 'Apply the OpenShift GitOps operator Subscription'
+run apply -f "$bootstrap_dir/gitops-operator.yaml"
+
+if $dry_run; then
+  printf 'Would wait for argocd/openshift-gitops to appear and become Available.\n'
+else
+  step 'Wait for the default Argo CD instance'
+  # The operator creates the namespace and the default resource only after OLM
+  # resolves the InstallPlan. A jsonpath wait on a missing object fails
+  # immediately, so poll for the resource before waiting on its phase.
+  deadline=$((SECONDS + 600))
+  until oc -n openshift-gitops get argocd openshift-gitops >/dev/null 2>&1; do
+    ((SECONDS < deadline)) || die 'timed out waiting for argocd/openshift-gitops to appear'
+    sleep 5
+  done
+  oc -n openshift-gitops wait \
+    --for=jsonpath='{.status.phase}'=Available \
+    argocd/openshift-gitops --timeout=5m
+fi
+
+step 'Apply controller RBAC and the oce-stages AppProject'
+run apply -k "$bootstrap_dir"
+
+step 'Add the resource health checks to the default Argo CD instance'
+run -n openshift-gitops patch argocd openshift-gitops \
+  --type merge \
+  --patch-file "$bootstrap_dir/argocd-resource-health.patch.yaml"
+
+step "Register the $environment root Application"
+run apply -f "$root_application"
+
+if ! $dry_run; then
+  cat <<'EOF'
+
+Argo now creates the stage Applications wave by wave. Everything else stays in
+the runbooks, in this order:
+
+  1. Create the four system Secrets and run the SQL bootstrap (docs/install.md).
+     Argo never owns Secrets.
+  2. Install the OpenShell gateway and Envoy Gateway Helm releases. Their
+     post-renderers and OLM installs stay manual (docs/cluster.md, docs/routing.md).
+  3. Upgrade the oce Helm release with OCE's own helpers (docs/upgrades.md).
+     Do not add it to GitOps.
+  4. Apply control-plane, control-ui and control-ui-access with
+     scripts/prepare-kustomize (docs/kustomize.md).
+
+Check progress with:
+  oc -n openshift-gitops get applications
+EOF
+fi

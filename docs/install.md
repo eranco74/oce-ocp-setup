@@ -2,6 +2,11 @@
 
 Install the OpenClaw Control Plane (OCC) after preparing the OpenShift cluster. This procedure was exercised on OpenShift 4.22 with two `linux/amd64` workers, `gp3-csi`, the Red Hat cert-manager Operator, and the certified Crunchy Data PostgreSQL Operator. Run it from the matching source checkout. Keep the private kubeconfig and all passwords outside the repository. The NetworkPolicy examples use documentation-only IP addresses; replace them with values discovered on each cluster.
 
+On a cluster bootstrapped with `scripts/bootstrap-argocd`, Argo CD already owns
+the operators, database, admission, openshell and routing stages. Skip their
+`oc apply` commands in this guide; the remaining steps and the `oce` Helm release
+are unchanged. See [the GitOps guide](gitops.md).
+
 Use the private kubeconfig and Route prepared during cluster preparation. Read the console hostname from that Route and set the initial administrator email; the email is persisted during first bootstrap.
 
 **Set installation inputs.**

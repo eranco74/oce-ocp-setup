@@ -12,6 +12,7 @@ base/kustomization.yaml        All base resources for inspection
   operators/, database/, admission/, openshell/, control-plane/, routing/
   control-ui/, control-ui-access/
 overlays/test/                 Test profile, with a Kustomization for each stage
+overlays/stage/                Stage profile for the five Argo CD-reconciled stages
 ../../scripts/prepare-kustomize  Prepare private overlays with deployment overrides
 ../../scripts/verify-images     Verify built image architectures and save digest references
 ../../scripts/resolve-images    Pin published Quay images to amd64 digests instead of building
