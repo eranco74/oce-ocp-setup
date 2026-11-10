@@ -1,0 +1,11 @@
+# Stage profile for the five stages Argo CD reconciles.
+# The runbook-only stages (control-plane, control-ui, control-ui-access) keep
+# using overlays/test through scripts/prepare-kustomize.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - operators
+  - database
+  - admission
+  - openshell
+  - routing

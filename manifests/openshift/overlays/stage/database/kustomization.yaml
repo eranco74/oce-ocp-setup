@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../../base/database
+labels:
+  - includeSelectors: false
+    includeTemplates: false
+    pairs:
+      oce-ocp-setup/environment: stage
+patches:
+  # Placeholder stage sizing. Replace it with the real cluster's allocation
+  # before the stage redeploy.
+  - target:
+      group: postgres-operator.crunchydata.com
+      kind: PostgresCluster
+      name: oce-postgres
+    patch: |-
+      - op: replace
+        path: /spec/instances/0/dataVolumeClaimSpec/resources/requests/storage
+        value: 10Gi
