@@ -32,7 +32,15 @@ fetch() {
     --proto '=https' --proto-redir '=https' -H "Accept: $2" -o "$body" "https://$registry/v2/$namespace/$1" ||
     { echo "Could not fetch $1 from $registry/$namespace." >&2; exit 1; }
 }
-digest() { printf 'sha256:%s\n' "$(openssl dgst -sha256 -r "$body" | awk '{print $1}')"; }
+digest() {
+  local checksum
+  if command -v openssl >/dev/null 2>&1; then
+    checksum=$(openssl dgst -sha256 -r "$body" | awk '{print $1}')
+  else
+    checksum=$(sha256sum "$body" | awk '{print $1}')
+  fi
+  printf 'sha256:%s\n' "$checksum"
+}
 verify() { [[ "$(digest)" == "$2" ]] || { echo "Digest mismatch for $1@$2." >&2; exit 1; }; }
 
 # Follow tag -> manifest list -> amd64 manifest -> config, checking each digest, and set $record
